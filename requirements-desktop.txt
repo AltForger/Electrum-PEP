@@ -1,0 +1,7 @@
+-r requirements.txt
+Electrum @ https://download.electrum.org/4.8.4/Electrum-4.8.4.tar.gz#sha256=b3cbeefe37e84f62f6cec096eec28085d7a99097841eb96c9ee3e9bec20b0367
+cryptography==50.0.2
+PyInstaller==6.22.3
+PyQt6==6.12.1
+ledger-bitcoin==0.4.2
+hidapi==0.15.0

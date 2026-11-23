@@ -1,0 +1,14 @@
+.venv/
+.tools/
+build/
+dist/
+__pycache__/
+*.py[cod]
+*.log
+*.exe
+*.dll
+*.pepwallet
+Electrum-PEP-data/
+wallets/
+qt-settings.ini
+*.pep-lock
