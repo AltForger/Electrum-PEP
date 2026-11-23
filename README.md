@@ -9,7 +9,7 @@ Choose a file from [GitHub Releases](https://github.com/AltForger/Electrum-PEP/r
 - **Setup** installs the wallet for the current Windows user. Wallet data lives in `%LOCALAPPDATA%\Electrum-PEP`.
 - **Portable** runs directly from a writable folder. Keep the executable beside its existing `Electrum-PEP-data` folder when updating.
 
-This is a pre-release for Windows x64. The current Windows downloads are unsigned. Compare the SHA-256 digest of your downloaded file with its entry in `SHA256SUMS.txt` from the same release. In PowerShell, run `Get-FileHash .\filename.exe -Algorithm SHA256` with the name you downloaded.
+This is a pre-release for Windows x64. The current Windows downloads are unsigned.
 
 Create a wallet or restore an existing one in the startup wizard. Back up the recovery information for your wallet type before receiving funds. Use **Network** to inspect or select an Electrum server.
 
