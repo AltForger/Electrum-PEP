@@ -4,14 +4,24 @@ Electrum-PEP is an independent Windows desktop wallet for Pepecoin (PEP) mainnet
 
 ## Windows downloads
 
-Choose a file from [GitHub Releases](https://github.com/AltForger/Electrum-PEP/releases).
+Download the [latest Windows release](https://github.com/AltForger/Electrum-PEP/releases/latest).
 
 - **Setup** installs the wallet for the current Windows user. Wallet data lives in `%LOCALAPPDATA%\Electrum-PEP`.
 - **Portable** runs directly from a writable folder. Keep the executable beside its existing `Electrum-PEP-data` folder when updating.
 
-This is a pre-release for Windows x64. The current Windows downloads are unsigned.
+The Windows x64 downloads are unsigned.
 
 Create a wallet or restore an existing one in the startup wizard. Back up the recovery information for your wallet type before receiving funds. Use **Network** to inspect or select an Electrum server.
+
+## Wallet interface
+
+Choose a standard wallet, a multisignature wallet, or import Pepecoin addresses and private keys in the setup wizard.
+
+![Wallet type selection in the setup wizard](docs/screenshots/wallet-setup.png)
+
+The Send tab includes the recipient, description and PEP amount, along with saved payment drafts.
+
+![Send tab in a demonstration wallet](docs/screenshots/send-pep.png)
 
 ## Build the Windows release
 
