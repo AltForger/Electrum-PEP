@@ -1,4 +1,5 @@
 """Verified legacy P2PKH and BIP67 P2SH partial transactions for Pepecoin."""
+from pep_i18n import tr
 from embit import ec, script
 from embit.psbt import PSBT, DerivationPath
 from embit.transaction import Transaction, TransactionInput, TransactionOutput
@@ -38,15 +39,15 @@ def details(wallet, scope):
     keys = wallet.keys
     parent = scope.non_witness_utxo
     if parent is None or parent.txid() != scope.txid or not 0 <= scope.vout < len(parent.vout):
-        raise ValueError("Исходная транзакция входа не совпадает.")
+        raise ValueError(tr("The previous transaction for this input does not match."))
     if scope.witness_utxo or scope.final_scriptsig or scope.final_scriptwitness or scope.sighash_type not in (None, 1):
-        raise ValueError("Поддерживаются только неподготовленные входы PEP с SIGHASH_ALL.")
+        raise ValueError(tr("Only unsigned PEP inputs with SIGHASH_ALL are supported."))
     output = parent.vout[scope.vout]
     address = output_address(output.script_pubkey.data)
     if keys.entries:
         entries = dict(keys.entries)
         if address not in entries:
-            raise ValueError("Вход принадлежит другому кошельку.")
+            raise ValueError(tr("The input belongs to a different wallet."))
         key = entries[address]
         return output, output.script_pubkey, ([key.get_public_key()] if key else []), key, None
     path = next((d.derivation for pub,d in scope.bip32_derivations.items()
@@ -54,31 +55,31 @@ def details(wallet, scope):
                  and d.derivation[0] in (0,1) and d.derivation[1]<2**31
                  and keys.accounts[0].derive(d.derivation).sec()==pub.sec()), None)
     if path is None or wallet.address(*path) != address:
-        raise ValueError("Путь или адрес входа не соответствует кошельку.")
+        raise ValueError(tr("The input path or address does not match the wallet."))
     children = keys.children(*path)
     pubs = sorted((k.get_public_key() for k in children), key=lambda p:p.sec())
     code = output.script_pubkey
     if keys.kind == "multisig":
         code = keys.redeem(*path)
         if scope.redeem_script != code:
-            raise ValueError("Не совпадают участники или порог подписей.")
+            raise ValueError(tr("The cosigners or signature threshold do not match."))
     return output, code, pubs, (children[0].key if children[0].is_private else None), path
 
 
 def inspect(wallet, psbt):
     tx = psbt.tx
     if not tx.vin or not tx.vout or len({(i.txid,i.vout) for i in tx.vin}) != len(tx.vin):
-        raise ValueError("Пустая транзакция или повторяющийся вход.")
+        raise ValueError(tr("Empty transaction or duplicate input."))
     total = sum(details(wallet, scope)[0].value for scope in psbt.inputs)
     outputs = []
     for out in tx.vout:
         addr = output_address(out.script_pubkey.data)
         if not addr or out.value <= 0:
-            raise ValueError("Неподдерживаемый выход платежа.")
+            raise ValueError(tr("Unsupported payment output."))
         outputs.append((addr, out.value))
     fee = total - sum(amount for _,amount in outputs)
     if fee < 0:
-        raise ValueError("Сумма выходов превышает сумму входов.")
+        raise ValueError(tr("The output total exceeds the input total."))
     return outputs, fee
 
 
@@ -102,7 +103,7 @@ def sign(wallet, p):
             if sig is None:
                 continue
             if sig[-1:] != b"\x01" or not pub.verify(ec.Signature.parse(sig[:-1]), digest):
-                raise ValueError("Недействительная подпись участника.")
+                raise ValueError(tr("Invalid cosigner signature."))
             signatures.append((pub,sig))
         if len(signatures) < wallet.keys.threshold:
             complete = False

@@ -1,3 +1,4 @@
+from pep_i18n import select_language, tr
 from PyQt6 import QtCore, QtWidgets as W
 from mainnet_electrum import SERVERS, server_endpoint
 from concurrent.futures import ThreadPoolExecutor
@@ -31,34 +32,18 @@ def icon(name):
     return QIcon(str(ICONS / name))
 
 
-def notice_language(languages, translations):
-    for tag in languages:
-        locale = QtCore.QLocale(tag)
-        region = locale.name()
-        language = region.split("_")[0]
-        if language == "zh":
-            return "zh_Hant" if locale.script() == QtCore.QLocale.Script.TraditionalHanScript else "zh_Hans"
-        if language == "sr":
-            return "sr_Latn" if locale.script() == QtCore.QLocale.Script.LatinScript else "sr_Cyrl"
-        for key in (region, language):
-            if key in translations:
-                return key
-        if language == "pt":
-            return "pt_PT"
-    return "en"
-
-
 def show_startup_notice(settings, parent):
     setting = "startup/hideVersionReminder"
     if settings.value(setting, False, bool):
         return
     catalog = json.loads(PEP_LOGO.with_name("startup-notice.json").read_text(encoding="utf-8"))
     languages = QtCore.QLocale.system().uiLanguages()
-    message, checkbox = catalog[notice_language(languages, catalog)]
+    language = select_language(languages or [QtCore.QLocale.system().name()], catalog)
+    message, checkbox = catalog[language]
     box = QMessageBox(parent)
     box.setWindowTitle("Electrum-PEP")
     box.setTextFormat(Qt.TextFormat.PlainText)
-    box.setLayoutDirection(QtCore.QLocale(languages[0]).textDirection() if languages else Qt.LayoutDirection.LeftToRight)
+    box.setLayoutDirection(QtCore.QLocale(language).textDirection())
     box.setText(message)
     box.setIconPixmap(QIcon(str(PEP_LOGO)).pixmap(48,48))
     box.setStandardButtons(QMessageBox.StandardButton.Ok)
@@ -80,7 +65,7 @@ def info_table(parent, title, fields):
     dlg = QDialog(parent, DIALOG_FLAGS)
     dlg.setWindowTitle(title)
     form = QFormLayout(dlg)
-    if title.startswith("О программе") or title == "Информация о кошельке":
+    if title.startswith(tr("About")) or title == tr("Wallet information"):
         logo = QLabel()
         logo.setPixmap(QPixmap(str(PEP_LOGO)).scaledToHeight(64, Qt.TransformationMode.SmoothTransformation))
         form.addRow(logo)
@@ -98,17 +83,17 @@ def info_table(parent, title, fields):
 
 
 def about(parent):
-    info_table(parent, "О программе Electrum-PEP", [
-        ("Приложение", f"Electrum-PEP {VERSION} · {parent.wallet.network}"), ("Компоненты Electrum", electrum.__version__),
+    info_table(parent, tr("About Electrum-PEP"), [
+        (tr("Application"), f"Electrum-PEP {VERSION} · {parent.wallet.network}"), (tr("Electrum components"), electrum.__version__),
         ("Qt", qVersion()), ("PyQt", PYQT_VERSION_STR), ("Python", platform.python_version()),
-        ("Система", f"{platform.system()} {platform.release()} · {platform.machine()}"),
-        ("Исполняемый файл", sys.executable),
+        (tr("System"), f"{platform.system()} {platform.release()} · {platform.machine()}"),
+        (tr("Executable"), sys.executable),
     ])
 
 
 def preferences(parent, settings):
     dlg = QDialog(parent, DIALOG_FLAGS)
-    dlg.setWindowTitle("Настройки")
+    dlg.setWindowTitle(tr("Preferences"))
     layout = QVBoxLayout(dlg)
     tabs = QTabWidget()
     layout.addWidget(tabs)
@@ -117,25 +102,25 @@ def preferences(parent, settings):
     zeros = QSpinBox()
     zeros.setRange(0, 8)
     zeros.setValue(settings.value("zeros", 0, int))
-    form.addRow("Минимум знаков после запятой", zeros)
-    alternating = QCheckBox("Чередовать цвет строк в таблицах")
+    form.addRow(tr("Minimum decimal places"), zeros)
+    alternating = QCheckBox(tr("Alternate table row colors"))
     alternating.setChecked(settings.value("alternating", True, bool))
     form.addRow(alternating)
-    tabs.addTab(appearance, "Оформление")
+    tabs.addTab(appearance, tr("Appearance"))
     network = QWidget()
     form = QFormLayout(network)
     interval = QSpinBox()
     interval.setRange(15, 600)
-    interval.setSuffix(" сек.")
+    interval.setSuffix(tr(" sec"))
     interval.setValue(settings.value("interval", 60, int))
-    form.addRow("Обновление баланса и истории", interval)
+    form.addRow(tr("Balance and history refresh interval"), interval)
     rate = QDoubleSpinBox()
     rate.setDecimals(3)
     rate.setRange(.001, 10)
     rate.setSingleStep(.001)
     rate.setValue(settings.value("fee_rate", COIN // 100, int) / COIN)
-    form.addRow("Комиссия, PEP/кБ", rate)
-    tabs.addTab(network, "Транзакции")
+    form.addRow(tr("Fee rate (PEP/kB)"), rate)
+    tabs.addTab(network, tr("Transactions"))
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
     buttons.accepted.connect(dlg.accept)
     buttons.rejected.connect(dlg.reject)
@@ -153,7 +138,7 @@ class NetworkDialog(W.QDialog):
     def __init__(self, window):
         super().__init__(window, DIALOG_FLAGS)
         self.window = window
-        self.setWindowTitle("Сеть")
+        self.setWindowTitle(tr("Network"))
         self.setMinimumWidth(480)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         layout = W.QVBoxLayout(self)
@@ -163,16 +148,16 @@ class NetworkDialog(W.QDialog):
         coin_logo.setPixmap(QIcon(str(PEP_LOGO)).pixmap(36,36))
         form.addRow(coin_logo)
         self.state, self.peer, self.sync, self.error = (W.QLabel() for _ in range(4))
-        for title, widget in (("Состояние", self.state), ("Сервер", self.peer),
-                              ("Последняя синхронизация", self.sync), ("Ошибка", self.error)):
+        for title, widget in ((tr("Connection status"), self.state), (tr("Server"), self.peer),
+                              (tr("Last synchronized"), self.sync), (tr("Error"), self.error)):
             widget.setTextFormat(Qt.TextFormat.PlainText)
             widget.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             widget.setWordWrap(True)
             form.addRow(title, widget)
         layout.addWidget(status_box)
-        controls = W.QGroupBox("Выбор сервера")
+        controls = W.QGroupBox(tr("Server selection"))
         form = W.QFormLayout(controls)
-        self.auto = W.QCheckBox("Выбирать сервер автоматически")
+        self.auto = W.QCheckBox(tr("Select server automatically"))
         self.auto.setChecked(window.connection.manual is None)
         form.addRow(self.auto)
         self.host = W.QComboBox()
@@ -183,16 +168,16 @@ class NetworkDialog(W.QDialog):
         self.host.setCurrentText(window.settings.value("server/host", SERVERS[0], str))
         self.port.setValue(window.settings.value("server/port", 50002, int))
         self.host.activated.connect(lambda _: self.port.setValue(50002))
-        form.addRow("Адрес сервера", self.host)
-        form.addRow("Порт TLS", self.port)
+        form.addRow(tr("Server address"), self.host)
+        form.addRow(tr("TLS port"), self.port)
         self.auto.toggled.connect(self.host.setDisabled)
         self.auto.toggled.connect(self.port.setDisabled)
         self.host.setDisabled(self.auto.isChecked())
         self.port.setDisabled(self.auto.isChecked())
         layout.addWidget(controls)
         buttons = W.QDialogButtonBox()
-        self.apply_button = buttons.addButton("Подключиться", W.QDialogButtonBox.ButtonRole.ActionRole)
-        buttons.addButton("Закрыть", W.QDialogButtonBox.ButtonRole.RejectRole)
+        self.apply_button = buttons.addButton(tr("Connect"), W.QDialogButtonBox.ButtonRole.ActionRole)
+        buttons.addButton(tr("Close"), W.QDialogButtonBox.ButtonRole.RejectRole)
         self.apply_button.clicked.connect(self.apply)
         buttons.rejected.connect(self.close)
         layout.addWidget(buttons)
@@ -215,7 +200,7 @@ class NetworkDialog(W.QDialog):
         try:
             manual = None if self.auto.isChecked() else server_endpoint(self.host.currentText(), self.port.value())
         except ValueError as exc:
-            W.QMessageBox.warning(self, "Адрес сервера", str(exc))
+            W.QMessageBox.warning(self, tr("Server address"), str(exc))
             return
         self.window.set_server(manual)
         self.update_status()
@@ -228,16 +213,16 @@ class WalletWizard(QWizard):
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.wallet = None
-        self.setWindowTitle(f"Electrum-PEP — Мастер кошельков [{network}]")
+        self.setWindowTitle(tr("Electrum-PEP — Wallet Wizard [{network}]").format(network=network))
         self.setWizardStyle(QWizard.WizardStyle.ClassicStyle)
         self.setPixmap(QWizard.WizardPixmap.LogoPixmap, QPixmap(str(PEP_LOGO)).scaled(56, 56, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-        for which, text in ((self.WizardButton.NextButton, "Далее >"), (self.WizardButton.BackButton, "< Назад"),
-                            (self.WizardButton.FinishButton, "Открыть кошелёк"), (self.WizardButton.CancelButton, "Отмена")):
+        for which, text in ((self.WizardButton.NextButton, tr("Next >")), (self.WizardButton.BackButton, tr("< Back")),
+                            (self.WizardButton.FinishButton, tr("Open wallet")), (self.WizardButton.CancelButton, tr("Cancel"))):
             self.setButtonText(which, text)
         self.resize(590, 390)
         first = QWizardPage()
-        first.setTitle("Файл кошелька")
-        first.setSubTitle("Выберите сохранённый кошелёк или введите имя нового.")
+        first.setTitle(tr("Wallet file"))
+        first.setSubTitle(tr("Select a saved wallet or enter a name for a new one."))
         form = QFormLayout(first)
         self.name = QComboBox()
         self.name.setEditable(True)
@@ -246,17 +231,17 @@ class WalletWizard(QWizard):
         filenames = sorted(files, key=lambda p: p.stat().st_mtime, reverse=True)
         self.name.addItems([p.name for p in filenames])
         self.name.setCurrentText(selected.name if selected else (filenames[0].name if filenames else "default_wallet"))
-        form.addRow("Сеть", QLabel("Pepecoin " + network))
-        form.addRow("Кошелёк", self.name)
-        form.addRow("Папка", QLabel(str(directory)))
+        form.addRow(tr("Network"), QLabel("Pepecoin " + network))
+        form.addRow(tr("Wallet"), self.name)
+        form.addRow(tr("Folder"), QLabel(str(directory)))
         self.addPage(first)
         types = QWizardPage()
-        types.setTitle("Тип кошелька")
-        types.setSubTitle("Какой кошелёк Pepecoin вы хотите создать?")
+        types.setTitle(tr("Wallet type"))
+        types.setSubTitle(tr("What kind of Pepecoin wallet would you like to create?"))
         options = QVBoxLayout(types)
-        self.standard = QRadioButton("Стандартный кошелёк")
-        self.multi = QRadioButton("Кошелёк с несколькими подписями")
-        self.imported = QRadioButton("Импорт адресов или приватных ключей Pepecoin")
+        self.standard = QRadioButton(tr("Standard wallet"))
+        self.multi = QRadioButton(tr("Multi-signature wallet"))
+        self.imported = QRadioButton(tr("Import Pepecoin addresses or private keys"))
         self.standard.setChecked(True)
         for radio in (self.standard, self.multi, self.imported):
             options.addWidget(radio)
@@ -268,9 +253,9 @@ class WalletWizard(QWizard):
         self.required.setRange(1,3)
         self.required.setValue(2)
         self.total.valueChanged.connect(self.required.setMaximum)
-        line.addWidget(QLabel("Нужно подписей"))
+        line.addWidget(QLabel(tr("Signatures required")))
         line.addWidget(self.required)
-        line.addWidget(QLabel("из"))
+        line.addWidget(QLabel(tr("of")))
         line.addWidget(self.total)
         line.addStretch()
         options.addWidget(counts)
@@ -278,45 +263,45 @@ class WalletWizard(QWizard):
         self.multi.toggled.connect(counts.setVisible)
         self.addPage(types)
         method = QWizardPage()
-        method.setTitle("Источник ключей")
-        method.setSubTitle(f"Кошелёк Pepecoin {network} · стандарт BIP39")
+        method.setTitle(tr("Keystore"))
+        method.setSubTitle(tr("Pepecoin {network} wallet · BIP39").format(network=network))
         layout = QVBoxLayout(method)
-        self.new = QRadioButton("Создать новую сид-фразу")
+        self.new = QRadioButton(tr("Create a new seed"))
         self.new.setChecked(True)
         layout.addWidget(self.new)
-        self.restore = QRadioButton("У меня уже есть сид-фраза")
-        self.master = QRadioButton("Использовать мастер-ключ")
-        self.hardware = QRadioButton("Использовать аппаратный кошелёк Ledger")
+        self.restore = QRadioButton(tr("I already have a seed"))
+        self.master = QRadioButton(tr("Use a master key"))
+        self.hardware = QRadioButton(tr("Use a Ledger hardware device"))
         for radio in (self.restore,self.master,self.hardware):
             layout.addWidget(radio)
         self.addPage(method)
         seed = QWizardPage()
-        seed.setTitle("Сид-фраза кошелька")
+        seed.setTitle(tr("Wallet seed phrase"))
         self.seedpage = seed
         layout = QVBoxLayout(seed)
         self.words = QPlainTextEdit()
         layout.addWidget(self.words)
-        self.pair_button = W.QPushButton("Подключить Ledger")
+        self.pair_button = W.QPushButton(tr("Connect Ledger"))
         self.pair_button.clicked.connect(self.pair_ledger)
         layout.addWidget(self.pair_button)
         self.addPage(seed)
         cos = QWizardPage()
-        cos.setTitle("Ключи участников")
+        cos.setTitle(tr("Cosigner keys"))
         self.cos_page = cos
         grid = QFormLayout(cos)
         self.own_pub = QLineEdit()
         self.own_pub.setReadOnly(True)
         self.cos = QPlainTextEdit()
-        grid.addRow("Ваш публичный ключ", self.own_pub)
-        grid.addRow("Публичные ключи остальных", self.cos)
+        grid.addRow(tr("Your public key"), self.own_pub)
+        grid.addRow(tr("Other cosigners’ public keys"), self.cos)
         self.addPage(cos)
         pw = QWizardPage()
-        pw.setTitle("Пароль кошелька")
+        pw.setTitle(tr("Wallet password"))
         self.pwpage = pw
         form = QFormLayout(pw)
         self.pw, self.again = password_input(), password_input()
-        form.addRow("Пароль", self.pw)
-        self.repeat_label = QLabel("Ещё раз")
+        form.addRow(tr("Password"), self.pw)
+        self.repeat_label = QLabel(tr("Confirm password"))
         form.addRow(self.repeat_label, self.again)
         self.addPage(pw)
         self.currentIdChanged.connect(self.setup_page)
@@ -329,10 +314,10 @@ class WalletWizard(QWizard):
     def path(self):
         name = self.name.currentText().strip()
         if not name or name.endswith((".", " ")) or any(c in '<>:"/\\|?*' or ord(c) < 32 for c in name):
-            raise ValueError("Введите допустимое имя файла.")
+            raise ValueError(tr("Enter a valid file name."))
         path = self.directory / name
         if isreserved(name) or path.is_dir():
-            raise ValueError("Введите допустимое имя файла.")
+            raise ValueError(tr("Enter a valid file name."))
         legacy = self.directory / (name + ".pepwallet")
         if not path.exists() and legacy.is_file():
             return legacy
@@ -361,7 +346,7 @@ class WalletWizard(QWizard):
         if self.multi.isChecked() and cosigners:
             others = self.cos.toPlainText().split()
             if len(others) != self.total.value()-1:
-                raise ValueError(f"Введите {self.total.value()-1} публичных ключей остальных участников.")
+                raise ValueError(tr("Enter {count} public keys for the other cosigners.").format(count=self.total.value() - 1))
             doc.update(kind="multisig", threshold=self.required.value(), cosigners=others)
         return doc
 
@@ -382,11 +367,11 @@ class WalletWizard(QWizard):
         if idx == 3:
             mode = self.mode()
             title, hint = {
-                "import":("Импорт адресов или ключей", "Введите адреса PEP для наблюдения или WIF-ключи для подписи. По одному в строке."),
-                "ledger":("Аппаратный кошелёк", "Откройте Pepecoin на Ledger, нажмите «Подключить» и подтвердите адрес на устройстве."),
-                "master":("Мастер-ключ", "Введите ключ счёта xpub/dgub для наблюдения или xprv/dgpv для подписи. От этого ключа выводятся ветви /0 и /1."),
-                "create":("Новая сид-фраза", "Запишите слова по порядку и сохраните их."),
-                "restore":("Восстановление", "Введите слова BIP39 в исходном порядке."),
+                "import":(tr("Import addresses or keys"), tr("Enter PEP addresses for a watch-only wallet or WIF private keys for signing. Enter one per line.")),
+                "ledger":(tr("Hardware wallet"), tr("Open the Pepecoin app on your Ledger, click Connect Ledger and confirm the address on your device.")),
+                "master":(tr("Master key"), tr("Enter an account xpub/dgub for a watch-only wallet or an xprv/dgpv for signing. Branches /0 and /1 are derived from this key.")),
+                "create":(tr("New seed phrase"), tr("Write down the words in order and keep them in a safe place.")),
+                "restore":(tr("Restore wallet"), tr("Enter your BIP39 words in their original order.")),
             }[mode]
             self.seedpage.setTitle(title)
             self.seedpage.setSubTitle(hint)
@@ -400,10 +385,10 @@ class WalletWizard(QWizard):
                 self.words.setPlainText(self.generated)
         if idx == 4:
             self.own_pub.setText(public(own_account(self.key_document(False))).to_base58())
-            self.cos_page.setSubTitle(f"Передайте свой публичный ключ участникам. Введите остальные {self.total.value()-1} по одному в строке.")
+            self.cos_page.setSubTitle(tr("Share your public key with the other cosigners. Enter the other {count} public keys, one per line.").format(count=self.total.value() - 1))
         if idx == 5:
             exists = self.path().is_file()
-            self.pwpage.setSubTitle("Введите пароль для открытия файла." if exists else "Пароль шифрует файл на этом компьютере.")
+            self.pwpage.setSubTitle(tr("Enter the password to open the wallet file.") if exists else tr("This password encrypts the wallet file on this computer."))
             self.again.setVisible(not exists)
             self.repeat_label.setVisible(not exists)
             self.pw.setFocus()
@@ -440,15 +425,15 @@ class WalletWizard(QWizard):
             if idx == 5:
                 file_lock = QtCore.QLockFile(str(path.resolve()) + ".pep-lock")
                 if not file_lock.tryLock(0):
-                    raise ValueError("Этот файл кошелька уже открыт в другом окне.")
+                    raise ValueError(tr("This wallet file is already open in another window."))
                 if path.is_file():
                     self.wallet = Wallet.open(path, self.pw.text(), self.network)
                 else:
                     if self.pw.text() != self.again.text():
-                        raise ValueError("Пароли не совпадают.")
+                        raise ValueError(tr("Passwords do not match."))
                     self.wallet = Wallet.create_with_keys(path,self.key_document(),self.pw.text(),self.network)
                 self.wallet.file_lock = file_lock
             return True
         except Exception as exc:
-            QMessageBox.warning(self, "Кошелёк", str(exc))
+            QMessageBox.warning(self, tr("Wallet"), str(exc))
             return False

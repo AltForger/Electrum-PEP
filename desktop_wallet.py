@@ -1,5 +1,6 @@
 """Pepecoin wallet services for the Windows desktop application."""
 
+from pep_i18n import tr
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 import json
@@ -39,7 +40,7 @@ def parse_amount(text):
             raise ValueError
         return int(base)
     except (InvalidOperation, ValueError):
-        raise ValueError("Введите сумму от 0,01 PEP, до 8 знаков после запятой.") from None
+        raise ValueError(tr("Enter at least 0.01 PEP with up to 8 decimal places.")) from None
 
 
 def destination_script(address, network="testnet"):
@@ -50,7 +51,7 @@ def destination_script(address, network="testnet"):
         if len(payload) != 21 or payload[0] != NETWORKS[network][1]:
             raise ValueError
     except Exception:
-        raise ValueError(f"Введите адрес Pepecoin для сети {network}.") from None
+        raise ValueError(tr("Enter a Pepecoin address for {network}.").format(network=network)) from None
     return b"\x76\xa9\x14" + payload[1:] + b"\x88\xac"
 
 
@@ -72,13 +73,13 @@ def network_genesis(network):
 
 def check_network():
     if api("/api/getblockhash?index=0").strip('"') != network_genesis("testnet"):
-        raise ValueError("Сервер вернул начальный блок другой сети.")
+        raise ValueError(tr("The server returned a genesis block for a different network."))
 
 
 def account_from_words(words, network="testnet"):
     words = " ".join(words.lower().split())
     if len(words.split()) not in (12, 15, 18, 21, 24) or bip39_is_checksum_valid(words) != (True, True):
-        raise ValueError("Проверьте порядок и написание слов сид-фразы BIP39.")
+        raise ValueError(tr("Check the spelling and order of the words in your BIP39 seed phrase."))
     root = BIP32Node.from_rootseed(bip39_to_seed(words, passphrase=""), xtype="standard")
     return root.subkey_at_private_derivation(f"m/44'/{NETWORKS[network][0]}'/0'")
 
@@ -86,18 +87,18 @@ def account_from_words(words, network="testnet"):
 class Wallet:
     def __init__(self, storage, document, network="testnet"):
         if network not in ("mainnet", "testnet"):
-            raise ValueError("Неизвестная сеть кошелька.")
+            raise ValueError(tr("Unknown wallet network."))
         self.network = network
         self.genesis = network_genesis(network)
         if document.get("format") != f"electrum-pep-{network}-1" or document.get("genesis") != self.genesis:
-            raise ValueError(f"Файл не принадлежит выбранной сети {network}.")
+            raise ValueError(tr("This wallet file does not belong to {network}.").format(network=network))
         self.storage = storage
         self.document = document
         self.keys = KeySet(document) if network == "mainnet" else None
         self.advanced = bool(document.get("kind") or document.get("master"))
         if self.advanced:
             if self.keys is None:
-                raise ValueError("Требуется основная сеть.")
+                raise ValueError(tr("Mainnet is required."))
             return
         self.account = account_from_words(document["words"], network)
         self.branches = [self.account.subkey_at_private_derivation([i]).convert_to_public() for i in range(2)]
@@ -109,10 +110,10 @@ class Wallet:
     @classmethod
     def create_with_keys(cls, path, keys, password, network="mainnet"):
         if not password:
-            raise ValueError("Введите пароль для шифрования файла кошелька.")
+            raise ValueError(tr("Enter a password to encrypt the wallet file."))
         storage = WalletStorage(str(path))
         if storage.file_exists():
-            raise ValueError("Файл с таким именем уже существует.")
+            raise ValueError(tr("A file with this name already exists."))
         doc = {**keys, "format": f"electrum-pep-{network}-1", "genesis": network_genesis(network)}
         wallet = cls(storage, doc, network)
         storage.set_password(password, StorageEncryptionVersion.USER_PASSWORD)
@@ -123,11 +124,11 @@ class Wallet:
     def open(cls, path, password, network="testnet"):
         storage = WalletStorage(str(path))
         if not storage.file_exists() or not storage.is_encrypted_with_user_pw():
-            raise ValueError("Выберите зашифрованный файл кошелька Electrum-PEP.")
+            raise ValueError(tr("Select an encrypted Electrum-PEP wallet file."))
         try:
             storage.decrypt(password)
         except Exception as e:
-            raise ValueError("Не удалось открыть кошелёк. Проверьте пароль и файл.") from e
+            raise ValueError(tr("Could not open the wallet. Check the password and the file.")) from e
         return cls(storage, json.loads(storage.read()), network)
 
     def change_address(self, index):
@@ -173,7 +174,7 @@ def discover(wallet, *, history=False, run=None):
     query = f"/api/v2/xpub/{xpub}?details={details}&tokens=used&gap=20&pageSize=100"
     summary = json.loads(api(query))
     if summary.get("address") != xpub:
-        raise ValueError("Сервер вернул данные другого счёта.")
+        raise ValueError(tr("The server returned data for another account."))
     rows = json.loads(api(f"/api/v2/utxo/{xpub}?gap=20"))
     next_indices = [0, 0]
     utxos = []
@@ -182,7 +183,7 @@ def discover(wallet, *, history=False, run=None):
         # Blockbook supplies its own account prefix. Match only children of our xpub.
         branch, child = map(int, path.rsplit("/", 2)[1:])
         if branch not in (0, 1) or not 0 <= child < 2**31 or wallet.address(branch, child) != addr:
-            raise ValueError("Адрес сервера не совпал с адресом кошелька.")
+            raise ValueError(tr("The address returned by the server does not match the wallet address."))
         next_indices[branch] = max(next_indices[branch], child + 1)
         return branch, child
 
@@ -201,7 +202,7 @@ def discover(wallet, *, history=False, run=None):
         for page in range(2, int(summary.get("totalPages", 1)) + 1):
             data = json.loads(api(query + f"&page={page}"))
             if data.get("address") != xpub:
-                raise ValueError("Счёт истории не совпал.")
+                raise ValueError(tr("The transaction history belongs to a different account."))
             transactions.extend(data.get("transactions", []))
         transactions = list({tx["txid"]: tx for tx in transactions}.values())
     return Snapshot(int(summary["balance"]), int(summary["unconfirmedBalance"]), utxos, next_indices,
@@ -215,7 +216,7 @@ def estimated_fee(input_count, rate, input_size=149):
 def prepare(wallet, snapshot, destination, amount, fee_rate=COIN // 100, *, run=None):
     script = destination_script(destination, wallet.network)
     if amount < DUST:
-        raise ValueError("Минимальная сумма — 0,01 PEP.")
+        raise ValueError(tr("The minimum amount is 0.01 PEP."))
     selected = []
     total = 0
     for coin in sorted(snapshot.utxos, key=lambda u: u.value, reverse=True):
@@ -226,7 +227,7 @@ def prepare(wallet, snapshot, destination, amount, fee_rate=COIN // 100, *, run=
         if total >= amount + fee:
             break
     else:
-        raise ValueError("Недостаточно подтверждённых PEP с учётом комиссии.")
+        raise ValueError(tr("Insufficient confirmed PEP to cover the amount and fee."))
     inputs, keypairs = [], {}
     parents = []
     for coin in selected:
@@ -236,11 +237,11 @@ def prepare(wallet, snapshot, destination, amount, fee_rate=COIN // 100, *, run=
             raw = json.loads(api("/api/v2/tx/" + coin.txid))["hex"]
         parent = Transaction(raw)
         if parent.txid() != coin.txid or not 0 <= coin.index < len(parent.outputs()):
-            raise ValueError("Предыдущая транзакция не прошла проверку.")
+            raise ValueError(tr("The previous transaction failed verification."))
         output = parent.outputs()[coin.index]
         expected = destination_script(wallet.address(coin.branch, coin.child), wallet.network)
         if output.value != coin.value or output.scriptpubkey != expected:
-            raise ValueError("Сумма или владелец входа не совпали.")
+            raise ValueError(tr("The input amount or owner does not match."))
         if wallet.advanced:
             from embit.transaction import Transaction as LegacyTransaction
             parents.append(LegacyTransaction.from_string(raw))
@@ -266,7 +267,7 @@ def prepare(wallet, snapshot, destination, amount, fee_rate=COIN // 100, *, run=
     tx = PartialTransaction.from_io(inputs, outputs, version=1, locktime=0, BIP69_sort=False)
     tx.sign(keypairs)
     if not tx.is_complete():
-        raise ValueError("Не удалось подписать все входы.")
+        raise ValueError(tr("Could not sign all inputs."))
     raw = tx.serialize_to_network()
     return {"network": wallet.network, "txid": Transaction(raw).txid(), "hex": raw, "address": destination, "amount": amount, "fee": fee}
 
@@ -285,10 +286,10 @@ def seen(payment, *, run=None):
 
 def broadcast(payment, network="testnet", *, run=None):
     if network != payment.get("network", "testnet"):
-        raise ValueError("Сеть перевода отличается от сети кошелька.")
+        raise ValueError(tr("The payment and wallet networks do not match."))
     if network == "mainnet":
         if Transaction(payment["hex"]).txid() != payment["txid"]:
-            raise ValueError("TXID не соответствует подписанной транзакции.")
+            raise ValueError(tr("The TXID does not match the signed transaction."))
         return (run or mainnet_electrum.connected)(lambda c: mainnet_electrum.broadcast(c, payment))
     check_network()
     if seen(payment):
@@ -301,5 +302,5 @@ def broadcast(payment, network="testnet", *, run=None):
             reply = json.loads(stream.readline(65536))
     if reply.get("id") != 1 or reply.get("result") != payment["txid"]:
         if not seen(payment):
-            raise ValueError("Узел не подтвердил передачу. Можно повторить тот же перевод.")
+            raise ValueError(tr("The node did not confirm broadcast. You can retry the same payment."))
 

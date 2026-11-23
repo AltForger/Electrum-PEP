@@ -36,6 +36,7 @@ def file_info(filename, description):
 
 datas = [('licenses', 'licenses'), ('LICENSE', 'licenses/project'), ('DEPENDENCIES.md', 'licenses'), ('assets/pepecoin.png', 'assets'), ('assets/startup-notice.json', 'assets')]
 datas += collect_data_files('electrum')
+datas += [('assets/languages', 'assets/languages')]
 datas += collect_data_files('embit')
 datas += collect_data_files('certifi')
 datas += [('.venv/Lib/site-packages/PyQt6/Qt6/translations/qtbase_*.qm', 'PyQt6/Qt6/translations')]

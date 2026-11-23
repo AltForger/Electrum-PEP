@@ -1,4 +1,5 @@
 """Mainnet account keys, imported PEP addresses and sorted P2SH multisig."""
+from pep_i18n import tr
 from embit import base58, bip32, bip39, ec, hashes, script
 
 ACCOUNT = "m/44'/3434'/0'"
@@ -10,10 +11,10 @@ def account_key(text):
     data = base58.decode_check(text.strip())
     versions = {PUB: PUB, PRV: PRV, bytes.fromhex("02facafd"): PUB, bytes.fromhex("02fac398"): PRV}
     if len(data) != 78 or data[:4] not in versions:
-        raise ValueError("Введите мастер-ключ основной сети: xpub, xprv, dgub или dgpv.")
+        raise ValueError(tr("Enter a mainnet master key (xpub, xprv, dgub or dgpv)."))
     key = bip32.HDKey.parse(versions[data[:4]] + data[4:])
     if key.is_private != (versions[data[:4]] == PRV):
-        raise ValueError("Некорректный тип ключа.")
+        raise ValueError(tr("Invalid key type."))
     return key
 
 
@@ -24,7 +25,7 @@ def public(key):
 def wif_key(text):
     raw = base58.decode_check(text)
     if raw[:1] != bytes([158]) or len(raw) not in (33, 34) or (len(raw) == 34 and raw[-1] != 1):
-        raise ValueError("Требуется WIF Pepecoin mainnet.")
+        raise ValueError(tr("A Pepecoin mainnet WIF key is required."))
     key = ec.PrivateKey(raw[1:33], compressed=len(raw) == 34)
     return key
 
@@ -37,7 +38,7 @@ def own_account(doc):
     if doc.get("words"):
         words = doc["words"]
         if not bip39.mnemonic_is_valid(words):
-            raise ValueError("Проверьте слова сид-фразы BIP39.")
+            raise ValueError(tr("Check the words in your BIP39 seed phrase."))
         return bip32.HDKey.from_seed(bip39.mnemonic_to_seed(words)).derive(ACCOUNT)
     return account_key(doc["master"])
 
@@ -61,18 +62,18 @@ class KeySet:
                     modes.add("sign")
                     self.entries.append((single_address(key.get_public_key()), key))
             if len(modes) != 1 or not self.entries:
-                raise ValueError("Импортируйте список адресов или список WIF-ключей одного типа.")
+                raise ValueError(tr("Import a list of addresses or a list of WIF keys of the same type."))
         else:
             self.accounts = [own_account(doc)]
             if self.kind == "multisig":
                 others = [account_key(k) for k in doc["cosigners"]]
                 if any(k.is_private for k in others):
-                    raise ValueError("Для остальных участников укажите только публичные ключи.")
+                    raise ValueError(tr("Enter only public keys for the other cosigners."))
                 self.accounts.extend(others)
                 if not 1 <= self.threshold <= len(self.accounts) <= 15 or len(self.accounts) < 2:
-                    raise ValueError("Проверьте порог подписей и количество участников (2–15).")
+                    raise ValueError(tr("Check the signature threshold and the number of cosigners (2–15)."))
                 if len({(k.sec(),k.chain_code) for k in self.accounts}) != len(self.accounts):
-                    raise ValueError("Участники должны иметь разные ключи.")
+                    raise ValueError(tr("Each cosigner must have a different key."))
         self.watch = (all(k is None for _, k in self.entries) if self.entries else
                       not self.accounts[0].is_private and not self.ledger)
 

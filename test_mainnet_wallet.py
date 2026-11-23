@@ -72,7 +72,7 @@ class MainnetTests(unittest.TestCase):
             connection = mainnet_electrum.WalletConnection()
             self.assertEqual(connection.run(lambda c: c.host), fallback)
             self.assertEqual(connection.run(lambda c: c.port), 50002)
-            self.assertEqual(connection.status[:2], ("Подключено · TLS", fallback + ":50002"))
+            self.assertEqual(connection.status[:2], ("Connected · TLS", fallback + ":50002"))
             self.assertEqual([call.args for call in ctor.call_args_list], [(primary, 50002), (fallback, 50002)])
             connection.close()
             peer.close.assert_called_once()

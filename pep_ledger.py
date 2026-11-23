@@ -1,4 +1,5 @@
 """USB interface to the Pepecoin Ledger app (legacy Bitcoin APDUs)."""
+from pep_i18n import tr
 from contextlib import contextmanager
 import hid
 from embit import bip32, ec, hashes
@@ -13,14 +14,14 @@ def device():
     paths = [r["path"] for r in hid.enumerate(0x2c97, 0)
              if r.get("usage_page")==0xffa0 or r.get("interface_number")==0]
     if len(set(paths)) != 1:
-        raise ValueError("Подключите один разблокированный Ledger по USB и откройте на нём приложение Pepecoin.")
+        raise ValueError(tr("Connect one unlocked Ledger over USB and open the Pepecoin app on it."))
     handle = hid.device()
     handle.open_path(paths[0])
     try:
         handle.set_nonblocking(True)
         app = btchip(HIDDongleHIDAPI(handle, True, False))
         if app.getAppName() != "Pepecoin":
-            raise ValueError("Откройте приложение Pepecoin на Ledger.")
+            raise ValueError(tr("Open the Pepecoin app on your Ledger."))
         yield app
     finally:
         handle.close()
@@ -46,7 +47,7 @@ def pair():
         key = read_account(app)
         first = app.getWalletPublicKey(ACCOUNT[2:] + "/0/0", showOnScreen=True)
         if compressed(first["publicKey"]).sec() != key.derive([0,0]).sec():
-            raise ValueError("Адрес устройства не соответствует экспортированному ключу.")
+            raise ValueError(tr("The device address does not match the exported key."))
         return key.to_base58()
 
 
@@ -54,7 +55,7 @@ def sign_inputs(wallet, psbt, inputs):
     with device() as app:
         account = read_account(app)
         if account.to_base58() != wallet.keys.accounts[0].to_base58():
-            raise ValueError("Подключён Ledger другого кошелька.")
+            raise ValueError(tr("The connected Ledger belongs to another wallet."))
         tx = psbt.tx
         trusted = []
         for scope, vin in zip(psbt.inputs, tx.vin):

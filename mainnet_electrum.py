@@ -1,4 +1,5 @@
 """Pepecoin mainnet wallet synchronization and broadcast over Electrum TLS."""
+from pep_i18n import tr
 from contextlib import ExitStack
 from threading import Lock
 import ipaddress
@@ -34,7 +35,7 @@ class Client(ExitStack):
             self.call("server.version", [f"Electrum-PEP {VERSION}", "1.4"])
             header = bytes.fromhex(self.call("blockchain.block.header", [0]))
             if len(header) != 80 or hashlib.sha256(hashlib.sha256(header).digest()).digest()[::-1].hex() != GENESIS:
-                raise ValueError("Сервер подключён к другой сети.")
+                raise ValueError(tr("The server is connected to a different network."))
             return self
         except BaseException:
             self.close()
@@ -53,13 +54,13 @@ class Client(ExitStack):
             while len(replies) < len(ids):
                 line = self.stream.readline(8_000_001)
                 if len(line) > 8_000_000 or not line.endswith(b"\n"):
-                    raise ConnectionError("Неполный ответ Electrum-сервера.")
+                    raise ConnectionError(tr("Incomplete response from the Electrum server."))
                 msg = json.loads(line)
                 if "method" in msg and msg.get("id") is None:
                     continue
                 idx = msg.get("id")
                 if idx not in ids or idx in replies:
-                    raise ValueError("Некорректный ответ Electrum-сервера.")
+                    raise ValueError(tr("Invalid response from the Electrum server."))
                 if msg.get("error"):
                     raise ServerError(str(msg["error"]))
                 replies[idx] = msg["result"]
@@ -80,12 +81,12 @@ def server_endpoint(host, port):
         try:
             host = host.rstrip(".").encode("idna").decode("ascii").lower()
         except UnicodeError:
-            raise ValueError("Проверьте имя сервера.") from None
+            raise ValueError(tr("Check the server name.")) from None
         if len(host) > 253 or not all(re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", part)
                                      for part in host.split(".")):
-            raise ValueError("Введите имя сервера или IP-адрес. Порт указывается отдельно.")
+            raise ValueError(tr("Enter a server name or IP address. Enter the port separately."))
     if not 1 <= port <= 65535:
-        raise ValueError("Порт должен быть от 1 до 65535.")
+        raise ValueError(tr("The port must be between 1 and 65535."))
     return host, port
 
 
@@ -99,7 +100,7 @@ class WalletConnection:
     def __init__(self, manual=None):
         self.manual = manual
         self.client = None
-        self.status = ("Отключено", "", "")
+        self.status = (tr("Disconnected"), "", "")
         self._lock = Lock()
         self._closed = False
 
@@ -107,7 +108,7 @@ class WalletConnection:
         with self._lock:
             self._closed = True
             client, self.client = self.client, None
-            self.status = ("Отключено", "", "")
+            self.status = (tr("Disconnected"), "", "")
         if client:
             try:
                 client.sock.shutdown(socket.SHUT_RDWR)
@@ -126,19 +127,19 @@ class WalletConnection:
             label = endpoint_text(target)
             with self._lock:
                 if self._closed:
-                    raise ConnectionError("Соединение закрыто.")
+                    raise ConnectionError(tr("Connection closed."))
                 client = self.client
                 if client is None:
-                    self.status = ("Подключение…", label, "")
+                    self.status = (tr("Connecting…"), label, "")
             try:
                 if client is None:
                     client = Client(*target).__enter__()
                     with self._lock:
                         if self._closed:
                             client.close()
-                            raise ConnectionError("Соединение закрыто.")
+                            raise ConnectionError(tr("Connection closed."))
                         self.client = client
-                        self.status = ("Подключено · TLS", label, "")
+                        self.status = (tr("Connected · TLS"), label, "")
                 return operation(client)
             except (OSError, ValueError, KeyError, TypeError) as exc:
                 errors.append(f"{label} — {exc}")
@@ -146,7 +147,7 @@ class WalletConnection:
                     if self.client is client:
                         self.client = None
                     if not self._closed:
-                        self.status = ("Отключено", "", "\n".join(errors))
+                        self.status = (tr("Disconnected"), "", "\n".join(errors))
                 if client:
                     client.close()
         raise ConnectionError("\n".join(errors))
@@ -182,7 +183,7 @@ def broadcast(client, payment):
         return
     result = client.call("blockchain.transaction.broadcast", [payment["hex"]])
     if result != payment["txid"]:
-        raise ValueError("Сервер вернул другой идентификатор перевода.")
+        raise ValueError(tr("The server returned a different transaction ID."))
 
 
 def output_address(script):
@@ -223,7 +224,7 @@ def scan(client, wallet, history):
     for txid, raw in zip(ids, raws):
         tx = Transaction.from_string(raw)
         if tx.txid().hex() != txid:
-            raise ValueError("TXID полученной транзакции не совпал.")
+            raise ValueError(tr("The retrieved transaction has a different TXID."))
         is_coinbase = len(tx.vin) == 1 and tx.vin[0].txid == bytes(32) and tx.vin[0].vout == 0xffffffff
         inputs = [(i.txid.hex(), i.vout) for i in tx.vin]
         spent.update(inputs)

@@ -1,4 +1,5 @@
 """Qt desktop interface for Electrum-PEP mainnet."""
+from pep_i18n import set_ui_language, tr
 import argparse
 from datetime import datetime
 import os
@@ -65,7 +66,7 @@ def external(url):
 
 
 def stamp(t):
-    return datetime.fromtimestamp(t).strftime("%d.%m.%Y %H:%M") if t else "В очереди"
+    return datetime.fromtimestamp(t).strftime("%d.%m.%Y %H:%M") if t else tr("Pending")
 
 
 class MainWindow(W.QMainWindow):
@@ -88,33 +89,33 @@ class MainWindow(W.QMainWindow):
         self.resize(905, 540)
         self.setWindowIcon(QtGui.QIcon(str(PEP_LOGO)))
         self.setWindowTitle(f"Electrum-PEP {VERSION}  -  {Path(wallet.storage.path).name}  [PEP {wallet.network}]")
-        self.history = table(["Дата", "Описание", "Сумма (PEP)", "Баланс (PEP)"], 1)
+        self.history = table([tr("Date"), tr("Description"), tr("Amount (PEP)"), tr("Balance (PEP)")], 1)
         self.history.itemDoubleClicked.connect(lambda item, _: self.transaction_details(item))
-        self.addresses = table(["Тип", "Адрес", "Индекс", "Баланс (PEP)", "Операции"], 1)
-        self.outputs = table(["Выход", "Адрес", "Сумма (PEP)"], 1)
-        self.contacts = table(["Имя", "Адрес"], 1)
+        self.addresses = table([tr("Type"), tr("Address"), tr("Index"), tr("Balance (PEP)"), tr("Activity")], 1)
+        self.outputs = table([tr("Output"), tr("Address"), tr("Amount (PEP)")], 1)
+        self.contacts = table([tr("Name"), tr("Address")], 1)
         self.contacts.itemDoubleClicked.connect(lambda item, _: self.pay_to(item.text(1)))
         self.pages = {}
         for key, name, widget in [
-            ("history", "История", self.history), ("send", "Отправка", self.send_page()),
-            ("receive", "Получение", self.receive_page()), ("addresses", "Адреса", self.addresses),
-            ("coins", "Монеты", self.outputs), ("contacts", "Контакты", self.contacts_page()),
-            ("console", "Консоль", self.console_page()),
+            ("history", tr("History"), self.history), ("send", tr("Send"), self.send_page()),
+            ("receive", tr("Receive"), self.receive_page()), ("addresses", tr("Addresses"), self.addresses),
+            ("coins", tr("Coins"), self.outputs), ("contacts", tr("Contacts"), self.contacts_page()),
+            ("console", tr("Console"), self.console_page()),
         ]:
             i = self.tabs.addTab(widget, icon(f"tab_{key}.png"), name)
             self.pages[key] = i
         self.addresses.itemDoubleClicked.connect(lambda item, _: self.copy(item.text(1)))
         self.outputs.itemDoubleClicked.connect(lambda item, _: external(self.explorer + "/tx/" + item.text(0).split(":")[0]))
-        self.status_text = W.QLabel("Синхронизация…")
+        self.status_text = W.QLabel(tr("Synchronizing…"))
         coin_logo = W.QLabel()
         coin_logo.setPixmap(QtGui.QIcon(str(PEP_LOGO)).pixmap(24,24))
         coin_logo.setToolTip("Pepecoin · PEP mainnet")
         self.statusBar().addWidget(coin_logo)
         self.statusBar().addWidget(self.status_text, 1)
-        for png, tip, cb in [("lock.png", "Заблокировать кошелёк", self.lock_wallet),
-                             ("preferences.png", "Настройки", self.prefs),
-                             ("seed.png", "Сид-фраза", self.show_seed),
-                             ("status_waiting.png", "Сеть", self.network_info)]:
+        for png, tip, cb in [("lock.png", tr("Lock wallet"), self.lock_wallet),
+                             ("preferences.png", tr("Preferences"), self.prefs),
+                             ("seed.png", tr("Seed phrase"), self.show_seed),
+                             ("status_waiting.png", tr("Network"), self.network_info)]:
             if png == "seed.png" and not wallet.document.get("words"):
                 continue
             b = W.QToolButton()
@@ -150,19 +151,19 @@ class MainWindow(W.QMainWindow):
 
     def build_menu(self):
         bar = self.menuBar()
-        file = bar.addMenu("&Файл")
-        self.action(file, "Новый / восстановить…", self.switch_wallet, "Ctrl+N")
-        self.action(file, "Открыть…", self.open_file, "Ctrl+O")
-        self.action(file, "Открыть транзакцию PSBT…", self.open_psbt)
-        self.action(file, "Сохранить резервную копию…", self.backup)
+        file = bar.addMenu(tr("&File"))
+        self.action(file, tr("New / Restore…"), self.switch_wallet, "Ctrl+N")
+        self.action(file, tr("Open…"), self.open_file, "Ctrl+O")
+        self.action(file, tr("Open PSBT transaction…"), self.open_psbt)
+        self.action(file, tr("Save backup…"), self.backup)
         file.addSeparator()
-        self.action(file, "Выход", self.close, "Ctrl+Q")
-        wallet_menu = bar.addMenu("&Кошелёк")
-        self.action(wallet_menu, "Информация", self.wallet_info)
+        self.action(file, tr("Exit"), self.close, "Ctrl+Q")
+        wallet_menu = bar.addMenu(tr("&Wallet"))
+        self.action(wallet_menu, tr("Information"), self.wallet_info)
         if self.wallet.document.get("words"):
-            self.action(wallet_menu, "Сид-фраза", self.show_seed)
-        self.action(wallet_menu, "Заблокировать", self.lock_wallet, "Ctrl+L")
-        view = bar.addMenu("&Вид")
+            self.action(wallet_menu, tr("Seed phrase"), self.show_seed)
+        self.action(wallet_menu, tr("Lock"), self.lock_wallet, "Ctrl+L")
+        view = bar.addMenu(tr("&View"))
         for key in ("addresses", "coins", "contacts", "console"):
             idx = self.pages[key]
             a = view.addAction(self.tabs.tabText(idx))
@@ -174,28 +175,28 @@ class MainWindow(W.QMainWindow):
                 self.tabs.setTabVisible(index, checked)
                 self.settings.setValue("tabs/" + name, checked)
             a.toggled.connect(toggle)
-        tools = bar.addMenu("&Инструменты")
-        self.action(tools, "Настройки…", self.prefs)
-        self.action(tools, "Сеть…", self.network_info)
-        self.action(tools, "Обновить", self.refresh, "F5")
-        help_menu = bar.addMenu("&Справка")
-        self.action(help_menu, "О программе Electrum-PEP", lambda: about(self))
-        self.action(help_menu, "О Qt", lambda: W.QMessageBox.aboutQt(self, "О Qt"))
+        tools = bar.addMenu(tr("&Tools"))
+        self.action(tools, tr("Preferences…"), self.prefs)
+        self.action(tools, tr("Network…"), self.network_info)
+        self.action(tools, tr("Refresh"), self.refresh, "F5")
+        help_menu = bar.addMenu(tr("&Help"))
+        self.action(help_menu, tr("About Electrum-PEP"), lambda: about(self))
+        self.action(help_menu, tr("About Qt"), lambda: W.QMessageBox.aboutQt(self, tr("About Qt")))
 
     def send_page(self):
         page = W.QWidget()
         box = W.QVBoxLayout(page)
         form = W.QFormLayout()
         self.payto, self.description, self.amount = W.QLineEdit(), W.QLineEdit(), W.QLineEdit()
-        self.payto.setPlaceholderText(f"Адрес Pepecoin {self.wallet.network}")
-        form.addRow("Получатель", self.payto)
-        form.addRow("Описание", self.description)
-        form.addRow("Сумма", row(self.amount, W.QLabel("PEP"), button("Макс.", self.maximum)))
+        self.payto.setPlaceholderText(tr("Pepecoin {network} address").format(network=self.wallet.network))
+        form.addRow(tr("Recipient"), self.payto)
+        form.addRow(tr("Description"), self.description)
+        form.addRow(tr("Amount"), row(self.amount, W.QLabel("PEP"), button(tr("Max"), self.maximum)))
         box.addLayout(form)
-        self.pay_button = button("Оплатить…", self.pay)
-        box.addLayout(row(button("Очистить", self.clear_send), button("Сохранить", self.save_draft), self.pay_button, right=True))
-        box.addWidget(W.QLabel("Очередь отправки"))
-        self.drafts = table(["Описание", "Получатель", "Сумма (PEP)"], 1)
+        self.pay_button = button(tr("Pay…"), self.pay)
+        box.addLayout(row(button(tr("Clear"), self.clear_send), button(tr("Save"), self.save_draft), self.pay_button, right=True))
+        box.addWidget(W.QLabel(tr("Payment queue")))
+        self.drafts = table([tr("Description"), tr("Recipient"), tr("Amount (PEP)")], 1)
         self.drafts.itemDoubleClicked.connect(lambda item, _: self.load_draft(item))
         self.drafts.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.drafts.customContextMenuRequested.connect(self.draft_menu)
@@ -212,15 +213,15 @@ class MainWindow(W.QMainWindow):
         self.recv_address.setReadOnly(True)
         self.recv_address.setText(self.wallet.address(0, 0))
         self.expiry = W.QComboBox()
-        for label, seconds in [("1 день", 86400), ("1 час", 3600), ("1 неделя", 604800), ("Без срока", 0)]:
+        for label, seconds in [(tr("1 day"), 86400), (tr("1 hour"), 3600), (tr("1 week"), 604800), (tr("No expiry"), 0)]:
             self.expiry.addItem(label, seconds)
-        form.addRow("Описание", self.recv_desc)
-        form.addRow("Запрашиваемая сумма", row(self.recv_amount, W.QLabel("PEP")))
-        form.addRow("Срок действия", self.expiry)
-        form.addRow("Адрес", self.recv_address)
+        form.addRow(tr("Description"), self.recv_desc)
+        form.addRow(tr("Requested amount"), row(self.recv_amount, W.QLabel("PEP")))
+        form.addRow(tr("Expires after"), self.expiry)
+        form.addRow(tr("Address"), self.recv_address)
         left.addLayout(form)
-        actions = row(button("Копировать", lambda: self.copy(self.recv_address.text()), "copy.png"),
-                      button("Создать запрос", self.new_request))
+        actions = row(button(tr("Copy"), lambda: self.copy(self.recv_address.text()), "copy.png"),
+                      button(tr("Create request"), self.new_request))
         left.addLayout(actions)
         top.addLayout(left, 1)
         self.qr = W.QLabel()
@@ -228,8 +229,8 @@ class MainWindow(W.QMainWindow):
         self.qr.setAlignment(Qt.AlignmentFlag.AlignCenter)
         top.addWidget(self.qr)
         box.addLayout(top)
-        box.addWidget(W.QLabel("Запросы на получение"))
-        self.requests = table(["Дата", "Описание", "Сумма (PEP)", "Статус"], 1)
+        box.addWidget(W.QLabel(tr("Payment requests")))
+        self.requests = table([tr("Date"), tr("Description"), tr("Amount (PEP)"), tr("Status")], 1)
         self.requests.itemDoubleClicked.connect(lambda item, _: self.show_request(item))
         box.addWidget(self.requests)
         self.set_qr(self.recv_address.text())
@@ -253,7 +254,7 @@ class MainWindow(W.QMainWindow):
         page = W.QWidget()
         box = W.QVBoxLayout(page)
         box.addWidget(self.contacts)
-        box.addLayout(row(button("Новый контакт…", self.add_contact), button("Удалить", self.remove_contact)))
+        box.addLayout(row(button(tr("New contact…"), self.add_contact), button(tr("Delete"), self.remove_contact)))
         return page
 
     def console_page(self):
@@ -261,7 +262,7 @@ class MainWindow(W.QMainWindow):
         box = W.QVBoxLayout(page)
         self.console = W.QPlainTextEdit()
         self.console.setReadOnly(True)
-        self.console.setPlainText(f"Electrum-PEP {self.wallet.network}\nhelp — список доступных команд")
+        self.console.setPlainText(tr("Electrum-PEP {network}\nType help to list available commands").format(network=self.wallet.network))
         self.command = W.QLineEdit()
         self.command.returnPressed.connect(self.run_command)
         box.addWidget(self.console)
@@ -278,7 +279,7 @@ class MainWindow(W.QMainWindow):
 
     def copy(self, text):
         W.QApplication.clipboard().setText(text)
-        self.statusBar().showMessage("Скопировано", 2000)
+        self.statusBar().showMessage(tr("Copied"), 2000)
 
     def run_job(self, msg, work, done):
         if self.busy:
@@ -298,9 +299,9 @@ class MainWindow(W.QMainWindow):
         if self.displayed_status != status:
             self.displayed_status = status
             state, peer, _ = status
-            image = {"Подключено · TLS": "status_connected.png", "Подключение…": "status_waiting.png"}
+            image = {tr("Connected · TLS"): "status_connected.png", tr("Connecting…"): "status_waiting.png"}
             self.network_indicator.setIcon(icon(image.get(state, "status_disconnected.png")))
-            self.network_indicator.setToolTip("Сеть · " + (f"{state} {peer}" if peer else state))
+            self.network_indicator.setToolTip(tr("Network · ") + (f"{state} {peer}" if peer else state))
         try:
             callback, result = self.jobs.get_nowait()
         except Empty:
@@ -315,9 +316,9 @@ class MainWindow(W.QMainWindow):
 
     def failed(self, exc):
         self.last_error = str(exc)
-        self.statusBar().showMessage("Ошибка: " + self.last_error)
+        self.statusBar().showMessage(tr("Error: ") + self.last_error)
         self.statusBar().setToolTip(self.last_error)
-        self.pay_button.setText("Повторить перевод" if self.wallet.document.get("pending") else "Оплатить…")
+        self.pay_button.setText(tr("Retry payment") if self.wallet.document.get("pending") else tr("Pay…"))
 
     def refresh(self):
         if self.busy or W.QApplication.activeModalWidget():
@@ -334,17 +335,17 @@ class MainWindow(W.QMainWindow):
             self.last_sync, self.last_error = stamp(time.time()), ""
             self.statusBar().setToolTip("")
             self.paint_data()
-        self.run_job("Синхронизация…", fetch, update)
+        self.run_job(tr("Synchronizing…"), fetch, update)
 
     def paint_data(self):
         s = self.snapshot
         if not s:
             return
-        balance = "Баланс: " + self.fmt(s.confirmed) + " PEP"
+        balance = tr("Balance: ") + self.fmt(s.confirmed) + " PEP"
         if s.pending:
-            balance += "  [" + self.fmt(s.pending) + " PEP без подтверждения]"
+            balance += "  [" + self.fmt(s.pending) + tr(" PEP unconfirmed]")
         self.status_text.setText(balance)
-        self.pay_button.setText("Повторить перевод" if self.wallet.document.get("pending") else "Оплатить…")
+        self.pay_button.setText(tr("Retry payment") if self.wallet.document.get("pending") else tr("Pay…"))
         self.history.clear()
         owned = {a[2] for a in s.addresses}
         running = s.confirmed + s.pending
@@ -354,11 +355,11 @@ class MainWindow(W.QMainWindow):
                 return bool(owned.intersection(output.get("addresses") or ()))
             delta = sum(int(v["value"]) for v in tx["vout"] if mine(v)) - sum(int(v["value"]) for v in tx["vin"] if mine(v))
             confirms = int(tx.get("confirmations", 0))
-            status = stamp(tx.get("blockTime")) if confirms else "Без подтверждения"
-            label = labels.get(tx["txid"]) or ("Получение" if delta > 0 else "Отправка")
+            status = stamp(tx.get("blockTime")) if confirms else tr("Unconfirmed")
+            label = labels.get(tx["txid"]) or (tr("Receive") if delta > 0 else tr("Send"))
             item = datum([status, label, ("+" if delta > 0 else "") + self.fmt(delta), self.fmt(running)])
             item.setIcon(0, icon("confirmed.png" if confirms >= 6 else f"clock{confirms}.png" if confirms else "unconfirmed.png"))
-            item.setToolTip(0, f"Подтверждений: {confirms}")
+            item.setToolTip(0, tr("Confirmations: {count}").format(count=confirms))
             item.setData(0, Qt.ItemDataRole.UserRole, tx)
             if delta < 0:
                 item.setForeground(2, QtGui.QColor("#bd3838"))
@@ -370,7 +371,7 @@ class MainWindow(W.QMainWindow):
             child = s.next_indices[branch]
             address_rows.append((branch, child, self.wallet.address(branch, child), 0, 0))
         for branch, idx, addr, value, count in sorted(address_rows):
-            self.addresses.addTopLevelItem(datum(["Сдача" if branch else "Получение", addr, idx, self.fmt(value), count]))
+            self.addresses.addTopLevelItem(datum([tr("Change") if branch else tr("Receive"), addr, idx, self.fmt(value), count]))
         self.outputs.clear()
         for utxo in s.utxos:
             self.outputs.addTopLevelItem(datum([f"{utxo.txid}:{utxo.index}", self.wallet.address(utxo.branch, utxo.child), self.fmt(utxo.value)]))
@@ -405,29 +406,29 @@ class MainWindow(W.QMainWindow):
             return
         pending = self.wallet.document.get("pending")
         if pending:
-            if W.QMessageBox.question(self, "Повторить передачу", f"{coins(pending['amount'])} PEP → {pending['address']}\nTXID: {pending['txid']}") == W.QMessageBox.StandardButton.Yes:
+            if W.QMessageBox.question(self, tr("Retry broadcast"), f"{coins(pending['amount'])} PEP → {pending['address']}\nTXID: {pending['txid']}") == W.QMessageBox.StandardButton.Yes:
                 self.transmit(pending)
             return
         try:
             addr, amount, desc = self.send_fields()
         except ValueError as exc:
-            W.QMessageBox.warning(self, "Перевод", str(exc))
+            W.QMessageBox.warning(self, tr("Payment"), str(exc))
             return
         rate = self.rate()
         def confirm(plan):
             if "psbt" in plan:
                 self.review_psbt(PSBT.from_base64(plan["psbt"]), desc)
                 return
-            text = f"Сеть: Pepecoin {self.wallet.network}\nПолучатель: {addr}\nСумма: {coins(amount)} PEP\nКомиссия: {coins(plan['fee'])} PEP"
-            if W.QMessageBox.question(self, "Подтвердить перевод", text) != W.QMessageBox.StandardButton.Yes:
+            text = tr("Network: Pepecoin {network}\nRecipient: {address}\nAmount: {amount} PEP\nFee: {fee} PEP").format(network=self.wallet.network, address=addr, amount=coins(amount), fee=coins(plan['fee']))
+            if W.QMessageBox.question(self, tr("Confirm payment"), text) != W.QMessageBox.StandardButton.Yes:
                 return
             self.accept_payment(plan, desc)
-        self.run_job("Проверка входов и комиссии…", lambda: prepare(self.wallet, discover(self.wallet, run=self.connection.run), addr, amount, rate, run=self.connection.run), confirm)
+        self.run_job(tr("Checking inputs and fee…"), lambda: prepare(self.wallet, discover(self.wallet, run=self.connection.run), addr, amount, rate, run=self.connection.run), confirm)
 
     def accept_payment(self, plan, desc):
         document = self.wallet.document
         if document.get("pending"):
-            raise ValueError("Сначала завершите предыдущий перевод.")
+            raise ValueError(tr("Complete the previous payment first."))
         document["pending"] = plan
         try:
             if desc:
@@ -440,15 +441,15 @@ class MainWindow(W.QMainWindow):
 
     def open_psbt(self):
         if self.busy:
-            self.statusBar().showMessage("Дождитесь завершения текущей операции.", 2500)
+            self.statusBar().showMessage(tr("Wait for the current operation to finish."), 2500)
             return
-        path, _ = W.QFileDialog.getOpenFileName(self,"Открыть транзакцию", "", "PSBT (*.psbt)")
+        path, _ = W.QFileDialog.getOpenFileName(self,tr("Open transaction"), "", "PSBT (*.psbt)")
         if path:
             try:
                 with open(path,"rb") as stream:
                     data = stream.read(8_000_001)
                 if len(data)>8_000_000:
-                    raise ValueError("Слишком большой файл.")
+                    raise ValueError(tr("File is too large."))
                 self.review_psbt(PSBT.parse(data))
             except Exception as exc:
                 W.QMessageBox.warning(self,"PSBT",str(exc))
@@ -457,42 +458,42 @@ class MainWindow(W.QMainWindow):
         outputs, fee = pep_psbt.inspect(self.wallet,p)
         lines = [f"{addr}   {coins(amount)} PEP" for addr,amount in outputs]
         review = W.QDialog(self,DIALOG_FLAGS)
-        review.setWindowTitle("Проверка транзакции · PEP mainnet")
+        review.setWindowTitle(tr("Review transaction · PEP mainnet"))
         layout = W.QVBoxLayout(review)
-        layout.addWidget(W.QLabel("Все выходы, включая сдачу"))
+        layout.addWidget(W.QLabel(tr("All outputs, including change")))
         listing = W.QPlainTextEdit("\n".join(lines))
         listing.setReadOnly(True)
         layout.addWidget(listing)
-        layout.addWidget(W.QLabel(f"Комиссия: {coins(fee)} PEP"))
-        layout.addLayout(row(button("Отмена",review.reject),
-                             button("Продолжить" if self.wallet.keys.watch else "Подписать…",review.accept)))
+        layout.addWidget(W.QLabel(tr("Fee: {fee} PEP").format(fee=coins(fee))))
+        layout.addLayout(row(button(tr("Cancel"),review.reject),
+                             button(tr("Continue") if self.wallet.keys.watch else tr("Sign…"),review.accept)))
         review.resize(580,280)
         if not review.exec():
             return
         def ready(plan):
             if "psbt" in plan:
-                path,_ = W.QFileDialog.getSaveFileName(self,"Передать следующему участнику","payment.psbt","PSBT (*.psbt)")
+                path,_ = W.QFileDialog.getSaveFileName(self,tr("Save for the next cosigner"),"payment.psbt","PSBT (*.psbt)")
                 if path:
                     Path(path).write_bytes(PSBT.from_base64(plan["psbt"]).serialize())
                 return
-            if W.QMessageBox.question(self, "Отправить подписанную транзакцию?",
-                                      "\n".join(lines)+f"\nКомиссия: {coins(fee)} PEP") == W.QMessageBox.StandardButton.Yes:
+            if W.QMessageBox.question(self, tr("Broadcast the signed transaction?"),
+                                      "\n".join(lines)+tr("\nFee: {fee} PEP").format(fee=coins(fee))) == W.QMessageBox.StandardButton.Yes:
                 self.accept_payment(plan,desc)
-        self.run_job("Подпись транзакции…",lambda:pep_psbt.sign(self.wallet,p),ready)
+        self.run_job(tr("Signing transaction…"),lambda:pep_psbt.sign(self.wallet,p),ready)
 
     def transmit(self, plan):
         def complete(_):
             self.clear_send()
-            self.pay_button.setText("Повторить перевод")
-            W.QMessageBox.information(self, "Перевод передан", "TXID\n" + plan["txid"])
+            self.pay_button.setText(tr("Retry payment"))
+            W.QMessageBox.information(self, tr("Transaction broadcast"), "TXID\n" + plan["txid"])
             self.refresh()
-        self.run_job(f"Передача транзакции в PEP {self.wallet.network}…", lambda: broadcast(plan, self.wallet.network, run=self.connection.run), complete)
+        self.run_job(tr("Broadcasting transaction to PEP {network}…").format(network=self.wallet.network), lambda: broadcast(plan, self.wallet.network, run=self.connection.run), complete)
 
     def save_draft(self):
         try:
             addr, amount, desc = self.send_fields()
         except ValueError as e:
-            W.QMessageBox.warning(self, "Черновик", str(e))
+            W.QMessageBox.warning(self, tr("Draft"), str(e))
             return
         draft = {"address": addr, "amount": amount, "description": desc}
         drafts = self.wallet.document.setdefault("drafts", [])
@@ -512,8 +513,8 @@ class MainWindow(W.QMainWindow):
         if not item:
             return
         menu = W.QMenu(self)
-        load = menu.addAction("Открыть черновик")
-        remove = menu.addAction("Удалить черновик")
+        load = menu.addAction(tr("Open draft"))
+        remove = menu.addAction(tr("Delete draft"))
         choice = menu.exec(self.drafts.viewport().mapToGlobal(pos))
         if choice is load:
             self.load_draft(item)
@@ -533,17 +534,17 @@ class MainWindow(W.QMainWindow):
 
     def new_request(self):
         if not self.snapshot:
-            W.QMessageBox.information(self, "Получение", "Дождитесь синхронизации адресов.")
+            W.QMessageBox.information(self, tr("Receive"), tr("Wait for address synchronization to finish."))
             return
         try:
             amount = parse_amount(self.recv_amount.text()) if self.recv_amount.text().strip() else 0
             idx = self.receive_index()
             if self.wallet.keys.entries and idx >= len(self.wallet.keys.entries):
-                raise ValueError("Все импортированные адреса уже выданы. Для получения скопируйте существующий адрес.")
+                raise ValueError(tr("All imported addresses have already been issued. Copy an existing address to receive a payment."))
             if not self.wallet.keys.entries and idx - self.snapshot.next_indices[0] >= 20:
-                raise ValueError("Уже выдано 20 последовательных неиспользованных адресов. Используйте один из существующих запросов.")
+                raise ValueError(tr("Twenty consecutive unused addresses have already been issued. Use an existing payment request."))
         except ValueError as e:
-            W.QMessageBox.warning(self, "Запрос", str(e))
+            W.QMessageBox.warning(self, tr("Request"), str(e))
             return
         request = {"time": int(time.time()), "index": idx, "address": self.wallet.address(0, idx),
                    "description": self.recv_desc.text().strip(), "amount": amount, "expiry": self.expiry.currentData()}
@@ -581,9 +582,9 @@ class MainWindow(W.QMainWindow):
                     pending += outputs
             target = max(1, req["amount"])
             expired = req["expiry"] and time.time() > req["time"] + req["expiry"]
-            status = ("Оплачен" if paid >= target else "Без подтверждения" if paid + pending >= target else
-                      "Частично оплачен" if paid + pending else "Истёк" if expired else "Ожидает оплаты")
-            item = datum([stamp(req["time"]), req["description"], self.fmt(req["amount"]) if req["amount"] else "Любая", status])
+            status = (tr("Paid") if paid >= target else tr("Unconfirmed") if paid + pending >= target else
+                      tr("Partially paid") if paid + pending else tr("Expired") if expired else tr("Awaiting payment"))
+            item = datum([stamp(req["time"]), req["description"], self.fmt(req["amount"]) if req["amount"] else tr("Any amount"), status])
             item.setData(0, Qt.ItemDataRole.UserRole, req)
             self.requests.addTopLevelItem(item)
 
@@ -593,16 +594,16 @@ class MainWindow(W.QMainWindow):
             self.contacts.addTopLevelItem(datum([name, addr]))
 
     def add_contact(self):
-        name, ok = W.QInputDialog.getText(self, "Новый контакт", "Имя")
+        name, ok = W.QInputDialog.getText(self, tr("New contact"), tr("Name"))
         if not ok or not name.strip():
             return
-        addr, ok = W.QInputDialog.getText(self, "Новый контакт", f"Адрес PEP {self.wallet.network}")
+        addr, ok = W.QInputDialog.getText(self, tr("New contact"), tr("PEP {network} address").format(network=self.wallet.network))
         if not ok:
             return
         try:
             destination_script(addr.strip(), self.wallet.network)
         except ValueError as e:
-            W.QMessageBox.warning(self, "Адрес", str(e))
+            W.QMessageBox.warning(self, tr("Address"), str(e))
             return
         self.wallet.document.setdefault("contacts", {})[addr.strip()] = name.strip()
         self.wallet.save()
@@ -610,7 +611,7 @@ class MainWindow(W.QMainWindow):
 
     def remove_contact(self):
         item = self.contacts.currentItem()
-        if item and W.QMessageBox.question(self, "Контакты", "Удалить контакт «" + item.text(0) + "»?") == W.QMessageBox.StandardButton.Yes:
+        if item and W.QMessageBox.question(self, tr("Contacts"), tr("Delete contact “{name}”?").format(name=item.text(0))) == W.QMessageBox.StandardButton.Yes:
             del self.wallet.document["contacts"][item.text(1)]
             self.wallet.save()
             self.render_contacts()
@@ -618,24 +619,24 @@ class MainWindow(W.QMainWindow):
     def transaction_details(self, item):
         tx = item.data(0, Qt.ItemDataRole.UserRole)
         dlg = W.QDialog(self, DIALOG_FLAGS)
-        dlg.setWindowTitle("Транзакция")
+        dlg.setWindowTitle(tr("Transaction"))
         box = W.QVBoxLayout(dlg)
         form = W.QFormLayout()
         box.addLayout(form)
         txid = W.QLineEdit(tx["txid"])
         txid.setReadOnly(True)
         form.addRow("TXID", txid)
-        form.addRow("Подтверждения", W.QLabel(str(tx.get("confirmations", 0))))
-        form.addRow("Блок", W.QLabel(str(tx.get("blockHeight", "—"))))
-        form.addRow("Комиссия", W.QLabel(self.fmt(int(tx["fees"])) + " PEP" if tx.get("fees") is not None else "—"))
+        form.addRow(tr("Confirmations"), W.QLabel(str(tx.get("confirmations", 0))))
+        form.addRow(tr("Block"), W.QLabel(str(tx.get("blockHeight", "—"))))
+        form.addRow(tr("Fee"), W.QLabel(self.fmt(int(tx["fees"])) + " PEP" if tx.get("fees") is not None else "—"))
         label = W.QLineEdit(self.wallet.document.get("labels", {}).get(tx["txid"], ""))
-        form.addRow("Описание", label)
-        outputs = table(["Адрес получателя", "Сумма (PEP)"], 0)
+        form.addRow(tr("Description"), label)
+        outputs = table([tr("Recipient address"), tr("Amount (PEP)")], 0)
         for out in tx["vout"]:
             outputs.addTopLevelItem(datum([", ".join(out.get("addresses") or []), self.fmt(int(out["value"]))]))
         box.addWidget(outputs)
-        box.addLayout(row(button("В обозревателе ↗", lambda: external(self.explorer + "/tx/" + tx["txid"])),
-                          button("Сохранить описание", dlg.accept), button("Закрыть", dlg.reject), right=True))
+        box.addLayout(row(button(tr("View in block explorer ↗"), lambda: external(self.explorer + "/tx/" + tx["txid"])),
+                          button(tr("Save description"), dlg.accept), button(tr("Close"), dlg.reject), right=True))
         dlg.resize(655, 345)
         if dlg.exec():
             self.wallet.document.setdefault("labels", {})[tx["txid"]] = label.text().strip()
@@ -644,16 +645,16 @@ class MainWindow(W.QMainWindow):
 
     def wallet_info(self):
         keys = self.wallet.keys
-        names = {"standard":"Стандартный", "multisig":f"Мультиподпись {keys.threshold} из {len(keys.accounts)}",
-                 "import":"Импортированный"}
-        fields = [("Файл", self.wallet.storage.path), ("Сеть","Pepecoin mainnet"),
-                  ("Тип",names[keys.kind]),("Подпись","Ledger" if keys.ledger else "Только наблюдение" if keys.watch else "Локальная"),
-                  ("Шифрование файла","Electrum BIE1")]
+        names = {"standard":tr("Standard"), "multisig":tr("Multisig {required} of {total}").format(required=keys.threshold, total=len(keys.accounts)),
+                 "import":tr("Imported")}
+        fields = [(tr("File"), self.wallet.storage.path), (tr("Network"),"Pepecoin mainnet"),
+                  (tr("Type"),names[keys.kind]),(tr("Signing"),"Ledger" if keys.ledger else tr("Watch-only") if keys.watch else tr("Local")),
+                  (tr("File encryption"),"Electrum BIE1")]
         if self.wallet.document.get("words") or keys.ledger:
-            fields.append(("Путь счёта","m/44'/3434'/0'"))
+            fields.append((tr("Account derivation path"),"m/44'/3434'/0'"))
         for i,k in enumerate(keys.accounts):
-            fields.append(("Ваш публичный ключ" if i==0 else f"Участник {i+1}",public(k).to_base58()))
-        info_table(self,"Информация о кошельке",fields)
+            fields.append((tr("Your public key") if i==0 else tr("Cosigner {number}").format(number=i + 1),public(k).to_base58()))
+        info_table(self,tr("Wallet information"),fields)
 
     def network_info(self):
         dialog = self.findChild(NetworkDialog)
@@ -680,7 +681,7 @@ class MainWindow(W.QMainWindow):
             def complete(_):
                 if peer != self.connection.status[1]:
                     self.refresh()
-            self.run_job("Проверка соединения…", lambda: self.connection.run(lambda c: c.call("server.ping", [])), complete)
+            self.run_job(tr("Checking connection…"), lambda: self.connection.run(lambda c: c.call("server.ping", [])), complete)
 
     def prefs(self):
         if preferences(self, self.settings):
@@ -693,34 +694,34 @@ class MainWindow(W.QMainWindow):
         self.timer.start(1000 * self.settings.value("interval", 60, int))
 
     def show_seed(self):
-        pw, ok = W.QInputDialog.getText(self, "Сид-фраза", "Пароль кошелька", W.QLineEdit.EchoMode.Password)
+        pw, ok = W.QInputDialog.getText(self, tr("Seed phrase"), tr("Wallet password"), W.QLineEdit.EchoMode.Password)
         if not ok:
             return
         try:
             words = Wallet.open(Path(self.wallet.storage.path), pw, self.wallet.network).document["words"]
         except ValueError as e:
-            W.QMessageBox.warning(self, "Сид-фраза", str(e))
+            W.QMessageBox.warning(self, tr("Seed phrase"), str(e))
             return
-        info_table(self, "Сид-фраза BIP39", [("Слова по порядку", words)])
+        info_table(self, tr("BIP39 seed phrase"), [(tr("Words in order"), words)])
 
     def backup(self):
-        path, _ = W.QFileDialog.getSaveFileName(self, "Резервная копия", str(Path.home() / f"{self.wallet.network}-backup"), "Все файлы (*)")
+        path, _ = W.QFileDialog.getSaveFileName(self, tr("Backup"), str(Path.home() / f"{self.wallet.network}-backup"), tr("All files (*)"))
         if path:
             try:
                 shutil.copy2(self.wallet.storage.path, path)
-                self.statusBar().showMessage("Зашифрованная копия сохранена", 3500)
+                self.statusBar().showMessage(tr("Encrypted backup saved"), 3500)
             except OSError as exc:
-                W.QMessageBox.warning(self, "Резервная копия", str(exc))
+                W.QMessageBox.warning(self, tr("Backup"), str(exc))
 
     def switch_wallet(self, selected=None):
         if self.busy:
-            self.statusBar().showMessage("Дождитесь завершения текущей операции.", 2500)
+            self.statusBar().showMessage(tr("Wait for the current operation to finish."), 2500)
             return
         self.change_to = selected or "new"
         self.close()
 
     def open_file(self):
-        path, _ = W.QFileDialog.getOpenFileName(self, "Открыть кошелёк", str(self.directory), "Все файлы (*)")
+        path, _ = W.QFileDialog.getOpenFileName(self, tr("Open wallet"), str(self.directory), tr("All files (*)"))
         if path:
             self.switch_wallet(Path(path))
 
@@ -735,12 +736,12 @@ class MainWindow(W.QMainWindow):
                     "getinfo": lambda: f"Electrum-PEP {VERSION} · {self.wallet.network} · {self.wallet.storage.path}",
                     "getbalance": lambda: self.status_text.text(),
                     "listaddresses": lambda: "\n".join(self.addresses.topLevelItem(i).text(1) for i in range(self.addresses.topLevelItemCount())),
-                    "listunspent": lambda: "\n".join(f"{u.txid}:{u.index}  {self.fmt(u.value)} PEP" for u in snap.utxos) if snap else "Синхронизация",
-                    "history": lambda: "\n".join(t["txid"] for t in snap.transactions) if snap else "Синхронизация"}
+                    "listunspent": lambda: "\n".join(f"{u.txid}:{u.index}  {self.fmt(u.value)} PEP" for u in snap.utxos) if snap else tr("Synchronizing"),
+                    "history": lambda: "\n".join(t["txid"] for t in snap.transactions) if snap else tr("Synchronizing")}
         if command == "clear":
             self.console.clear()
             return
-        self.console.appendPlainText(">>> " + command + "\n" + commands.get(command, lambda: "Неизвестная команда. Введите help.")())
+        self.console.appendPlainText(">>> " + command + "\n" + commands.get(command, lambda: tr("Unknown command. Type help."))())
 
     def closeEvent(self, event):
         self.timer.stop()
@@ -764,14 +765,16 @@ def main(portable=False):
     app.setWindowIcon(QtGui.QIcon(str(PEP_LOGO)))
     translator = QtCore.QTranslator(app)
     ui_languages = QtCore.QLocale.system().uiLanguages()
-    ui_locale = QtCore.QLocale(ui_languages[0]) if ui_languages else QtCore.QLocale.system()
+    language = set_ui_language(ui_languages or [QtCore.QLocale.system().name()])
+    ui_locale = QtCore.QLocale(language)
+    app.setLayoutDirection(ui_locale.textDirection())
     if translator.load(ui_locale, "qtbase", "_", QtCore.QLibraryInfo.path(QtCore.QLibraryInfo.LibraryPath.TranslationsPath)):
         app.installTranslator(translator)
     folder = root / "mainnet"
     try:
         folder.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
-        W.QMessageBox.critical(None,"Папка кошелька",str(exc))
+        W.QMessageBox.critical(None,tr("Wallet folder"),str(exc))
         return
     wallet_session(app, folder)
 
@@ -779,7 +782,7 @@ def main(portable=False):
 def wallet_session(app, root):
     lock = QtCore.QLockFile(str(root / "qt-instance.lock"))
     if not lock.tryLock(0):
-        W.QMessageBox.information(None, "Electrum-PEP", "Кошелёк основной сети уже открыт.")
+        W.QMessageBox.information(None, "Electrum-PEP", tr("The mainnet wallet is already open."))
         return
     settings = QtCore.QSettings(str(root / "qt-settings.ini"), QtCore.QSettings.Format.IniFormat)
     directory = root / "wallets"

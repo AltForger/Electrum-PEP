@@ -15,6 +15,8 @@ Create a wallet or restore an existing one in the startup wizard. Back up the re
 
 ## Wallet interface
 
+The wallet follows the Windows display-language preference at startup. It uses the first supported language in that list and falls back to English. The interface includes 57 languages and regional or script variants. Translations are bundled with the application and work offline. The screenshots below show the English interface.
+
 Choose a standard wallet, a multisignature wallet, or import Pepecoin addresses and private keys in the setup wizard.
 
 ![Wallet type selection in the setup wizard](docs/screenshots/wallet-setup.png)
@@ -38,3 +40,5 @@ The build fetches the pinned libsecp256k1 sources and verifies their SHA-256 bef
 ## Licenses and sources
 
 The AltForge application code is licensed under the [MIT License](LICENSE). The Windows distribution includes GPLv3 PyQt6 and other third-party components. The combined distribution is provided under GPLv3, with each component retaining its own license. See [dependency sources and versions](DEPENDENCIES.md) and the [license texts](licenses/).
+
+Interface translations include strings from the Electrum 4.8.4 locale catalogs and machine-assisted translations for wallet-specific terms. Corrections to individual languages are welcome.
