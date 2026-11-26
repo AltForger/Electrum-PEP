@@ -139,11 +139,50 @@ class Wallet:
     def save(self):
         self.storage.write(json.dumps(self.document))
 
+    def frozen_outpoints(self):
+        return set(self.document.get("frozen_outputs", []))
+
+    def spendable_coins(self, snapshot):
+        frozen = self.frozen_outpoints()
+        return [coin for coin in snapshot.utxos if coin.outpoint not in frozen]
+
+    def check_unfrozen_inputs(self, inputs):
+        frozen = self.frozen_outpoints()
+        for txin in inputs:
+            ref = f"{txin.txid.hex()}:{txin.vout}"
+            if ref in frozen:
+                raise ValueError(tr("Frozen") + ": " + ref)
+
+    def check_signed_payment(self, payment):
+        if self.document.get("frozen_outputs"):
+            self.check_unfrozen_inputs(payment_inputs(payment))
+
+    def set_coin_frozen(self, ref, freeze):
+        frozen = self.frozen_outpoints()
+        if (ref in frozen) == freeze:
+            return
+        if freeze:
+            pending = self.document.get("pending")
+            if pending:
+                if any(ref == f"{i.txid.hex()}:{i.vout}" for i in payment_inputs(pending)):
+                    raise ValueError(tr("Complete the previous payment first."))
+            frozen.add(ref)
+        else:
+            frozen.remove(ref)
+        updated = sorted(frozen)
+        self.storage.write(json.dumps({**self.document, "frozen_outputs": updated}))
+        self.document["frozen_outputs"] = updated
+
     def address(self, branch, index):
         if self.advanced:
             return self.keys.address(branch,index)
         key = self.branches[branch].subkey_at_public_derivation([index]).eckey
         return bitcoin.hash160_to_b58_address(hash_160(key.get_public_key_bytes(compressed=True)), NETWORKS[self.network][1])
+
+
+def payment_inputs(payment):
+    from embit.transaction import Transaction as RawTransaction
+    return RawTransaction.from_string(payment["hex"]).vin
 
 
 @dataclass(frozen=True)
@@ -153,6 +192,10 @@ class Coin:
     value: int
     branch: int
     child: int
+
+    @property
+    def outpoint(self):
+        return f"{self.txid}:{self.index}"
 
 
 @dataclass
@@ -219,7 +262,7 @@ def prepare(wallet, snapshot, destination, amount, fee_rate=COIN // 100, *, run=
         raise ValueError(tr("The minimum amount is 0.01 PEP."))
     selected = []
     total = 0
-    for coin in sorted(snapshot.utxos, key=lambda u: u.value, reverse=True):
+    for coin in sorted(wallet.spendable_coins(snapshot), key=lambda u: u.value, reverse=True):
         selected.append(coin)
         total += coin.value
         # Core's recommended 0.01 PEP/kB, using a conservative P2PKH size.

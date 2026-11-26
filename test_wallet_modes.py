@@ -60,6 +60,11 @@ class WalletModes(unittest.TestCase):
         watch=self.wallet("watch",{"master":self.a.to_public().to_base58()})
         self.assertTrue(watch.keys.watch)
         p=self.payment(watch)
+        ref = f"{p.tx.vin[0].txid.hex()}:{p.tx.vin[0].vout}"
+        cold.set_coin_frozen(ref, True)
+        with self.assertRaises(ValueError):
+            sign(cold, p)
+        cold.set_coin_frozen(ref, False)
         self.assertIn("psbt",sign(watch,p))
         self.assertIn("hex",sign(cold,p))
 

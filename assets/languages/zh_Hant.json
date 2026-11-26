@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "透過 USB 連接一台已解鎖的 Ledger ，然後開啟其上的 Pepecoin 應用程式。",
   "Open the Pepecoin app on your Ledger.": "在 Ledger 上開啟 Pepecoin 應用程式。",
   "The device address does not match the exported key.": "設備位址與導出的密鑰不符。",
-  "The connected Ledger belongs to another wallet.": "連接的 Ledger 屬於另一個錢包。"
+  "The connected Ledger belongs to another wallet.": "連接的 Ledger 屬於另一個錢包。",
+  "New version: {version}": "新版本：{version}",
+  "Frozen": "已凍結"
 }

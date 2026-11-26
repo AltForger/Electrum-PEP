@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Pievienojiet vienu atbloķētu Ledger, izmantojot USB, un atveriet tajā lietotni Pepecoin.",
   "Open the Pepecoin app on your Ledger.": "Savā Ledger atveriet lietotni Pepecoin.",
   "The device address does not match the exported key.": "Ierīces adrese neatbilst eksportētajai atslēgai.",
-  "The connected Ledger belongs to another wallet.": "Pieslēgtais Ledger pieder citam makam."
+  "The connected Ledger belongs to another wallet.": "Pieslēgtais Ledger pieder citam makam.",
+  "New version: {version}": "Jauna versija: {version}",
+  "Frozen": "Iesaldēts"
 }

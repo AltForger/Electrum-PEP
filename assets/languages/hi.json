@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "एक अनलॉक किए गए Ledger को USB से कनेक्ट करें और उस पर Pepecoin ऐप खोलें।",
   "Open the Pepecoin app on your Ledger.": "अपने Ledger पर Pepecoin ऐप खोलें।",
   "The device address does not match the exported key.": "डिवाइस का पता निर्यात की गई कुंजी से मेल नहीं खाता।",
-  "The connected Ledger belongs to another wallet.": "कनेक्टेड Ledger दूसरे वॉलेट का है।"
+  "The connected Ledger belongs to another wallet.": "कनेक्टेड Ledger दूसरे वॉलेट का है।",
+  "New version: {version}": "नया संस्करण: {version}",
+  "Frozen": "फ़्रीज़ किया गया"
 }

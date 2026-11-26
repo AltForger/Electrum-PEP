@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Kết nối một Ledger đã mở khóa qua USB và mở ứng dụng Pepecoin trên đó.",
   "Open the Pepecoin app on your Ledger.": "Mở ứng dụng Pepecoin trên Ledger của bạn.",
   "The device address does not match the exported key.": "Địa chỉ thiết bị không khớp với khóa đã xuất.",
-  "The connected Ledger belongs to another wallet.": "Ledger được kết nối thuộc về một ví khác."
+  "The connected Ledger belongs to another wallet.": "Ledger được kết nối thuộc về một ví khác.",
+  "New version: {version}": "Phiên bản mới: {version}",
+  "Frozen": "Đã đóng băng"
 }

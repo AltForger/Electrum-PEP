@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Ühendage üks lukustamata Ledger USB kaudu ja avage sellel rakendus Pepecoin.",
   "Open the Pepecoin app on your Ledger.": "Avage Ledger -s rakendus Pepecoin.",
   "The device address does not match the exported key.": "Seadme aadress ei ühti eksporditud võtmega.",
-  "The connected Ledger belongs to another wallet.": "Ühendatud Ledger kuulub teise rahakotti."
+  "The connected Ledger belongs to another wallet.": "Ühendatud Ledger kuulub teise rahakotti.",
+  "New version: {version}": "Uus versioon: {version}",
+  "Frozen": "Külmutatud"
 }

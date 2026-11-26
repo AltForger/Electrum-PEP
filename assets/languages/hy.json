@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Միացրեք մեկ ապակողպված Ledger USB-ի միջոցով և բացեք Pepecoin հավելվածը դրա վրա:",
   "Open the Pepecoin app on your Ledger.": "Բացեք Pepecoin հավելվածը ձեր Ledger -ում:",
   "The device address does not match the exported key.": "Սարքի հասցեն չի համապատասխանում արտահանված բանալիին:",
-  "The connected Ledger belongs to another wallet.": "Միացված Ledger -ը պատկանում է մեկ այլ դրամապանակի:"
+  "The connected Ledger belongs to another wallet.": "Միացված Ledger -ը պատկանում է մեկ այլ դրամապանակի:",
+  "New version: {version}": "Նոր տարբերակ: {version}",
+  "Frozen": "Սառեցված"
 }

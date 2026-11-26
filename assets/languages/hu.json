@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Csatlakoztasson egy feloldott Ledger -t USB-n keresztül, és nyissa meg rajta a Pepecoin alkalmazást.",
   "Open the Pepecoin app on your Ledger.": "Nyissa meg a Pepecoin alkalmazást a Ledger készüléken.",
   "The device address does not match the exported key.": "Az eszköz címe nem egyezik az exportált kulccsal.",
-  "The connected Ledger belongs to another wallet.": "A csatlakoztatott Ledger egy másik pénztárcához tartozik."
+  "The connected Ledger belongs to another wallet.": "A csatlakoztatott Ledger egy másik pénztárcához tartozik.",
+  "New version: {version}": "Új verzió: {version}",
+  "Frozen": "Befagyasztva"
 }

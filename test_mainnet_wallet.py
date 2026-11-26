@@ -64,6 +64,35 @@ class MainnetTests(unittest.TestCase):
         mainnet_electrum.broadcast(client, plan)
         client.call.assert_called_once_with("blockchain.transaction.get", [plan["txid"]])
 
+    def test_freeze_one_output_preserves_its_sibling_and_balance(self):
+        self.parent.vout.append(TransactionOutput(COIN, self.parent.vout[0].script_pubkey))
+        txid = self.parent.txid().hex()
+        large, small = [Coin(txid, n, out.value, 0, 0) for n, out in enumerate(self.parent.vout)]
+        snap = Snapshot(4 * COIN, 0, [large, small], [1, 0])
+        wallet = self.wallet
+        wallet.set_coin_frozen(large.outpoint, True)
+        wallet = Wallet.open(Path(wallet.storage.path), "test password", "mainnet")
+        self.assertEqual(wallet.spendable_coins(snap), [small])
+        self.assertEqual(snap.confirmed, 4 * COIN)
+        with patch.object(mainnet_electrum, "raw_transaction", return_value=self.parent.to_string()):
+            with self.assertRaises(ValueError):
+                prepare(wallet, snap, self.addr, COIN)
+            plan = prepare(wallet, snap, self.addr, COIN // 2)
+            inputs = Transaction.from_string(plan["hex"]).vin
+            self.assertEqual([(i.txid.hex(), i.vout) for i in inputs], [(txid, 1)])
+            wallet.document["pending"] = plan
+            with self.assertRaises(ValueError):
+                wallet.set_coin_frozen(small.outpoint, True)
+            del wallet.document["pending"]
+            wallet.set_coin_frozen(small.outpoint, True)
+            with self.assertRaises(ValueError):
+                wallet.check_signed_payment(plan)
+            with self.assertRaises(ValueError):
+                prepare(wallet, snap, self.addr, COIN // 2)
+            wallet.set_coin_frozen(large.outpoint, False)
+            reopened = Wallet.open(Path(wallet.storage.path), "test password", "mainnet")
+            self.assertEqual(reopened.spendable_coins(snap), [large])
+
     def test_server_selection_and_connection_reuse(self):
         primary, fallback = mainnet_electrum.SERVERS
         peer = Mock(host=fallback, port=50002)

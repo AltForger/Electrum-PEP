@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Prijunkite vieną atrakintą Ledger per USB ir atidarykite jame Pepecoin programėlę.",
   "Open the Pepecoin app on your Ledger.": "Savo Ledger atidarykite programą Pepecoin.",
   "The device address does not match the exported key.": "Įrenginio adresas nesutampa su eksportuotu raktu.",
-  "The connected Ledger belongs to another wallet.": "Prijungtas Ledger priklauso kitai piniginei."
+  "The connected Ledger belongs to another wallet.": "Prijungtas Ledger priklauso kitai piniginei.",
+  "New version: {version}": "Nauja versija: {version}",
+  "Frozen": "Užšaldyta"
 }

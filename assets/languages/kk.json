@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Құлыптан босатылған бір Ledger құрылғысын USB арқылы жалғаңыз және ондағы Pepecoin қолданбасын ашыңыз.",
   "Open the Pepecoin app on your Ledger.": "Ledger құрылғыңызда Pepecoin қолданбасын ашыңыз.",
   "The device address does not match the exported key.": "Құрылғы мекенжайы экспортталған кілтке сәйкес келмейді.",
-  "The connected Ledger belongs to another wallet.": "Қосылған Ledger басқа әмиянға тиесілі."
+  "The connected Ledger belongs to another wallet.": "Қосылған Ledger басқа әмиянға тиесілі.",
+  "New version: {version}": "Жаңа нұсқа: {version}",
+  "Frozen": "Мұздатылған"
 }

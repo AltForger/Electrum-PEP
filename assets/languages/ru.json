@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Подключите один разблокированный Ledger по USB и откройте на нём приложение Pepecoin.",
   "Open the Pepecoin app on your Ledger.": "Откройте приложение Pepecoin на Ledger.",
   "The device address does not match the exported key.": "Адрес устройства не соответствует экспортированному ключу.",
-  "The connected Ledger belongs to another wallet.": "Подключён Ledger другого кошелька."
+  "The connected Ledger belongs to another wallet.": "Подключён Ledger другого кошелька.",
+  "New version: {version}": "Новая версия: {version}",
+  "Frozen": "Заморожено"
 }

@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Conectați un Ledger deblocat prin USB și deschideți aplicația Pepecoin pe acesta.",
   "Open the Pepecoin app on your Ledger.": "Deschideți aplicația Pepecoin pe Ledger.",
   "The device address does not match the exported key.": "Adresa dispozitivului nu se potrivește cu cheia exportată.",
-  "The connected Ledger belongs to another wallet.": "Ledger conectat aparține altui portofel."
+  "The connected Ledger belongs to another wallet.": "Ledger conectat aparține altui portofel.",
+  "New version: {version}": "Versiune nouă: {version}",
+  "Frozen": "Înghețată"
 }

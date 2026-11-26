@@ -11,9 +11,13 @@ Download the [latest Windows release](https://github.com/AltForger/Electrum-PEP/
 
 The Windows x64 downloads are unsigned.
 
+Since 0.5.5, opening a wallet checks GitHub for a newer stable release. A button above the tabs opens that release in your browser. The check repeats every six hours while the wallet is open, or after one hour if GitHub is unavailable. Installation is manual.
+
 Create a wallet or restore an existing one in the startup wizard. Back up the recovery information for your wallet type before receiving funds. Use **Network** to inspect or select an Electrum server.
 
 ## Wallet interface
+
+To freeze a specific unspent output, enable **View → Coins** and tick **Frozen** on its row. Clear the checkbox to spend it again. Frozen PEP stays in the balance. Payments and **Max** use only unfrozen outputs. Freeze selections are saved in the encrypted wallet file and its backups; restoring only the seed creates a fresh selection.
 
 The wallet follows the Windows display-language preference at startup. It uses the first supported language in that list and falls back to English. The interface includes 57 languages and regional or script variants. Translations are bundled with the application and work offline. The screenshots below show the English interface.
 

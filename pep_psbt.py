@@ -68,6 +68,7 @@ def details(wallet, scope):
 
 def inspect(wallet, psbt):
     tx = psbt.tx
+    wallet.check_unfrozen_inputs(tx.vin)
     if not tx.vin or not tx.vout or len({(i.txid,i.vout) for i in tx.vin}) != len(tx.vin):
         raise ValueError(tr("Empty transaction or duplicate input."))
     total = sum(details(wallet, scope)[0].value for scope in psbt.inputs)

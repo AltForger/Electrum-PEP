@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Συνδέστε ένα ξεκλείδωτο Ledger μέσω USB και ανοίξτε την εφαρμογή Pepecoin σε αυτό.",
   "Open the Pepecoin app on your Ledger.": "Ανοίξτε την εφαρμογή Pepecoin στο Ledger σας.",
   "The device address does not match the exported key.": "Η διεύθυνση της συσκευής δεν ταιριάζει με το εξαγόμενο κλειδί.",
-  "The connected Ledger belongs to another wallet.": "Το συνδεδεμένο Ledger ανήκει σε άλλο πορτοφόλι."
+  "The connected Ledger belongs to another wallet.": "Το συνδεδεμένο Ledger ανήκει σε άλλο πορτοφόλι.",
+  "New version: {version}": "Νέα έκδοση: {version}",
+  "Frozen": "Παγωμένο"
 }

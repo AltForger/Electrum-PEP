@@ -1,6 +1,7 @@
 """Qt desktop interface for Electrum-PEP mainnet."""
 from pep_i18n import set_ui_language, tr
 import argparse
+import http.client
 from datetime import datetime
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import shutil
 import sys
 from embit.psbt import PSBT
 import pep_psbt
+import pep_updates
 from wallet_keys import public
 from threading import Thread
 import time
@@ -84,7 +86,21 @@ class MainWindow(W.QMainWindow):
         self.jobs = Queue()
         self.busy = False
         self.tabs = W.QTabWidget()
-        self.setCentralWidget(self.tabs)
+        central = W.QWidget()
+        layout = W.QVBoxLayout(central)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.release_tag = None
+        self.update_banner = W.QPushButton()
+        self.update_banner.hide()
+        self.update_banner.clicked.connect(self.open_release)
+        layout.addWidget(self.update_banner)
+        layout.addWidget(self.tabs)
+        self.setCentralWidget(central)
+        self.update_results = Queue()
+        self.update_timer = QtCore.QTimer(self)
+        self.update_timer.setSingleShot(True)
+        self.update_timer.timeout.connect(self.check_updates)
+        self.update_timer.start(0)
         self.setMinimumSize(680, 430)
         self.resize(905, 540)
         self.setWindowIcon(QtGui.QIcon(str(PEP_LOGO)))
@@ -92,7 +108,8 @@ class MainWindow(W.QMainWindow):
         self.history = table([tr("Date"), tr("Description"), tr("Amount (PEP)"), tr("Balance (PEP)")], 1)
         self.history.itemDoubleClicked.connect(lambda item, _: self.transaction_details(item))
         self.addresses = table([tr("Type"), tr("Address"), tr("Index"), tr("Balance (PEP)"), tr("Activity")], 1)
-        self.outputs = table([tr("Output"), tr("Address"), tr("Amount (PEP)")], 1)
+        self.outputs = table([tr("Output"), tr("Address"), tr("Amount (PEP)"), tr("Frozen")], 1)
+        self.outputs.itemChanged.connect(self.toggle_coin_freeze)
         self.contacts = table([tr("Name"), tr("Address")], 1)
         self.contacts.itemDoubleClicked.connect(lambda item, _: self.pay_to(item.text(1)))
         self.pages = {}
@@ -105,7 +122,7 @@ class MainWindow(W.QMainWindow):
             i = self.tabs.addTab(widget, icon(f"tab_{key}.png"), name)
             self.pages[key] = i
         self.addresses.itemDoubleClicked.connect(lambda item, _: self.copy(item.text(1)))
-        self.outputs.itemDoubleClicked.connect(lambda item, _: external(self.explorer + "/tx/" + item.text(0).split(":")[0]))
+        self.outputs.itemDoubleClicked.connect(lambda item, column: external(self.explorer + "/tx/" + item.text(0).split(":")[0]) if column != 3 else None)
         self.status_text = W.QLabel(tr("Synchronizing…"))
         coin_logo = W.QLabel()
         coin_logo.setPixmap(QtGui.QIcon(str(PEP_LOGO)).pixmap(24,24))
@@ -294,7 +311,37 @@ class MainWindow(W.QMainWindow):
                 self.jobs.put((self.failed, exc))
         Thread(target=worker, daemon=True).start()
 
+    def check_updates(self):
+        results = self.update_results
+
+        def worker():
+            try:
+                tag = pep_updates.check_latest()
+            except (OSError, ValueError, http.client.HTTPException):
+                results.put((False, None))
+            else:
+                results.put((True, tag))
+
+        Thread(target=worker, daemon=True).start()
+
+    def open_release(self):
+        if self.release_tag:
+            external(pep_updates.RELEASES + self.release_tag)
+
+    def update_release_notice(self):
+        try:
+            success, tag = self.update_results.get_nowait()
+        except Empty:
+            return
+        if success:
+            self.release_tag = tag
+            if tag:
+                self.update_banner.setText(tr("New version: {version}").format(version=f"Electrum-PEP {tag[1:]}") + "  ·  GitHub ↗")
+            self.update_banner.setVisible(bool(tag))
+        self.update_timer.start((6 if success else 1) * 60 * 60 * 1000)
+
     def drain(self):
+        self.update_release_notice()
         status = self.connection.status
         if self.displayed_status != status:
             self.displayed_status = status
@@ -373,8 +420,11 @@ class MainWindow(W.QMainWindow):
         for branch, idx, addr, value, count in sorted(address_rows):
             self.addresses.addTopLevelItem(datum([tr("Change") if branch else tr("Receive"), addr, idx, self.fmt(value), count]))
         self.outputs.clear()
+        frozen = self.wallet.frozen_outpoints()
         for utxo in s.utxos:
-            self.outputs.addTopLevelItem(datum([f"{utxo.txid}:{utxo.index}", self.wallet.address(utxo.branch, utxo.child), self.fmt(utxo.value)]))
+            item = datum([utxo.outpoint, self.wallet.address(utxo.branch, utxo.child), self.fmt(utxo.value)])
+            item.setCheckState(3, Qt.CheckState.Checked if utxo.outpoint in frozen else Qt.CheckState.Unchecked)
+            self.outputs.addTopLevelItem(item)
         self.recv_address.setText(self.wallet.address(0, self.receive_display_index()))
         self.set_qr(self.recv_address.text())
         self.render_saved()
@@ -382,9 +432,22 @@ class MainWindow(W.QMainWindow):
     def rate(self):
         return self.settings.value("fee_rate", COIN // 100, int)
 
+    def toggle_coin_freeze(self, item, column):
+        if column != 3:
+            return
+        ref = item.text(0)
+        try:
+            if self.busy:
+                raise ValueError(tr("Wait for the current operation to finish."))
+            self.wallet.set_coin_frozen(ref, item.checkState(3) == Qt.CheckState.Checked)
+        except Exception as exc:
+            with QtCore.QSignalBlocker(self.outputs):
+                item.setCheckState(3, Qt.CheckState.Checked if ref in self.wallet.frozen_outpoints() else Qt.CheckState.Unchecked)
+            self.statusBar().showMessage(str(exc), 5000)
+
     def maximum(self):
-        if self.snapshot and self.snapshot.utxos:
-            utxos = self.snapshot.utxos
+        if self.snapshot:
+            utxos = self.wallet.spendable_coins(self.snapshot)
             self.amount.setText(coins(max(0, sum(c.value for c in utxos) - estimated_fee(len(utxos), self.rate(), self.wallet.keys.input_bytes()))))
 
     def clear_send(self):
@@ -429,6 +492,7 @@ class MainWindow(W.QMainWindow):
         document = self.wallet.document
         if document.get("pending"):
             raise ValueError(tr("Complete the previous payment first."))
+        self.wallet.check_signed_payment(plan)
         document["pending"] = plan
         try:
             if desc:
@@ -482,12 +546,16 @@ class MainWindow(W.QMainWindow):
         self.run_job(tr("Signing transaction…"),lambda:pep_psbt.sign(self.wallet,p),ready)
 
     def transmit(self, plan):
+        def send():
+            self.wallet.check_signed_payment(plan)
+            return broadcast(plan, self.wallet.network, run=self.connection.run)
+
         def complete(_):
             self.clear_send()
             self.pay_button.setText(tr("Retry payment"))
             W.QMessageBox.information(self, tr("Transaction broadcast"), "TXID\n" + plan["txid"])
             self.refresh()
-        self.run_job(tr("Broadcasting transaction to PEP {network}…").format(network=self.wallet.network), lambda: broadcast(plan, self.wallet.network, run=self.connection.run), complete)
+        self.run_job(tr("Broadcasting transaction to PEP {network}…").format(network=self.wallet.network), send, complete)
 
     def save_draft(self):
         try:
@@ -744,6 +812,7 @@ class MainWindow(W.QMainWindow):
         self.console.appendPlainText(">>> " + command + "\n" + commands.get(command, lambda: tr("Unknown command. Type help."))())
 
     def closeEvent(self, event):
+        self.update_timer.stop()
         self.timer.stop()
         self.poll.stop()
         self.keepalive.stop()

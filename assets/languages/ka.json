@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "შეაერთეთ ერთი განბლოკილი Ledger USB-ზე და გახსენით მასზე Pepecoin აპი.",
   "Open the Pepecoin app on your Ledger.": "გახსენით Pepecoin აპი თქვენს Ledger -ზე.",
   "The device address does not match the exported key.": "მოწყობილობის მისამართი არ ემთხვევა ექსპორტირებულ გასაღებს.",
-  "The connected Ledger belongs to another wallet.": "დაკავშირებული Ledger ეკუთვნის სხვა საფულეს."
+  "The connected Ledger belongs to another wallet.": "დაკავშირებული Ledger ეკუთვნის სხვა საფულეს.",
+  "New version: {version}": "ახალი ვერსია: {version}",
+  "Frozen": "გაყინული"
 }

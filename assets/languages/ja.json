@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "ロック解除された Ledger を 1 台 USB 経由で接続し、その上で Pepecoin アプリを開きます。",
   "Open the Pepecoin app on your Ledger.": "Ledger で Pepecoin アプリを開きます。",
   "The device address does not match the exported key.": "デバイス アドレスがエクスポートされたキーと一致しません。",
-  "The connected Ledger belongs to another wallet.": "接続された Ledger は別のウォレットに属しています。"
+  "The connected Ledger belongs to another wallet.": "接続された Ledger は別のウォレットに属しています。",
+  "New version: {version}": "新しいバージョン：{version}",
+  "Frozen": "凍結"
 }

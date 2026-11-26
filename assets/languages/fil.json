@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Ikonekta ang isang naka-unlock na Ledger sa USB at buksan ang Pepecoin app dito.",
   "Open the Pepecoin app on your Ledger.": "Buksan ang Pepecoin app sa iyong Ledger.",
   "The device address does not match the exported key.": "Hindi tumutugma ang address ng device sa na-export na key.",
-  "The connected Ledger belongs to another wallet.": "Ang konektadong Ledger ay kabilang sa isa pang wallet."
+  "The connected Ledger belongs to another wallet.": "Ang konektadong Ledger ay kabilang sa isa pang wallet.",
+  "New version: {version}": "Bagong bersyon: {version}",
+  "Frozen": "Naka-freeze"
 }

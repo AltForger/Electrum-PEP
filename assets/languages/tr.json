@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Kilitlenmemiş bir Ledger 'yi USB üzerinden bağlayın ve üzerinde Pepecoin uygulamasını açın.",
   "Open the Pepecoin app on your Ledger.": "Ledger cihazınızda Pepecoin uygulamasını açın.",
   "The device address does not match the exported key.": "Aygıt adresi dışa aktarılan anahtarla eşleşmiyor.",
-  "The connected Ledger belongs to another wallet.": "Bağlı Ledger başka bir cüzdana ait."
+  "The connected Ledger belongs to another wallet.": "Bağlı Ledger başka bir cüzdana ait.",
+  "New version: {version}": "Yeni sürüm: {version}",
+  "Frozen": "Dondurulmuş"
 }

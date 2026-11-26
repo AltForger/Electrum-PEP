@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Konektatu desblokeatutako Ledger bat USB bidez eta ireki Pepecoin aplikazioa bertan.",
   "Open the Pepecoin app on your Ledger.": "Ireki Pepecoin aplikazioa zure Ledger -n.",
   "The device address does not match the exported key.": "Gailuaren helbidea ez dator bat esportatutako gakoarekin.",
-  "The connected Ledger belongs to another wallet.": "Konektatutako Ledger beste zorro batena da."
+  "The connected Ledger belongs to another wallet.": "Konektatutako Ledger beste zorro batena da.",
+  "New version: {version}": "Bertsio berria: {version}",
+  "Frozen": "Izoztuta"
 }

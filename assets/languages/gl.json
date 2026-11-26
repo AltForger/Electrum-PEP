@@ -255,5 +255,7 @@
   "Connect one unlocked Ledger over USB and open the Pepecoin app on it.": "Conecte un Ledger desbloqueado por USB e abra a aplicación Pepecoin nel.",
   "Open the Pepecoin app on your Ledger.": "Abre a aplicación Pepecoin no teu Ledger.",
   "The device address does not match the exported key.": "O enderezo do dispositivo non coincide coa clave exportada.",
-  "The connected Ledger belongs to another wallet.": "O Ledger conectado pertence a outra carteira."
+  "The connected Ledger belongs to another wallet.": "O Ledger conectado pertence a outra carteira.",
+  "New version: {version}": "Nova versión: {version}",
+  "Frozen": "Conxelada"
 }
